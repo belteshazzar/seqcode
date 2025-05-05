@@ -1,0 +1,47 @@
+
+# actor, boundary, control, entity have special icons
+dev:actor
+main:Class
+
+main.start() {
+
+  t:Thread
+  t.create() {
+
+    x: "Int \"Counter" # long name in quotes, escaped quote
+    x.create()
+  }
+  # . is a call (synchronous)
+  # > is a message (asynchronous)
+  t > run() {
+  
+    # alt, par, strict and seq create frames with multiple sections
+    alt(morning) {
+  
+      # loop, opt, critical, ignore, consider, assert, neg and break create frames
+      loop(while(true\)) { # parameters end on closing bracket, escaped bracket
+        x.inc()
+      }
+    }
+    alt(afternoon) {}
+  }
+
+  # later is used to perform actions after, outside of the normal flow
+  later() {
+
+    # self messages with no body can be +found or -lost
+    -sendStats(...)
+    ref(diagram 2)
+  }
+}
+
+getCoffee( strong ) {
+
+  # invariant labels also supported
+  state(caffeinated)
+}
+
+# notes are of the form note(x,y,width,message)
+note(450,50,300,welcome to ckwnc!)
+note(450,100,300,uml sequence diagrams automatically created from simple code)
+
