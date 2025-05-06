@@ -11,6 +11,25 @@ import {graph} from './src/graph.js';
 import { createCanvas } from 'canvas'
 
 
+import { createSVGWindow, config } from 'svgdom';
+import { SVG,registerWindow } from '@svgdotjs/svg.js'
+import { createCanvas } from 'canvas'
+
+const window = createSVGWindow();
+const document = window.document;
+registerWindow(window, document);
+
+config
+    // your font directory
+    .setFontDir('./fonts')
+    // map the font-family to the file
+    .setFontFamilyMappings({
+      'sans-serif': 'OpenSans-Regular.ttf'
+    })
+    // you can preload your fonts to avoid the loading delay
+    // when the font is used the first time
+    .preloadFonts()
+
 test('example generates without error', () => {
 
   const example = fs.readFileSync('./tests/example.ckwnc', 'utf8');
@@ -18,8 +37,11 @@ test('example generates without error', () => {
   const ast = parse(toks);
 
   const canvas = createCanvas(200, 200)
+  const svg = SVG(document.documentElement)
 
-  const gfx = new Graphics(canvas,{
+  const gfx = new Graphics({
+    canvas: canvas,
+    svg: svg,
     fontWeight: 100,
     fontSize: 10,
     fontFace: '"Century Gothic", CenturyGothic, AppleGothic, sans-serif',
@@ -43,4 +65,5 @@ test('example generates without error', () => {
   stream.pipe(out)
   out.on('finish', () =>  console.log('The PNG file was created.'))
 
+  fs.writeFileSync('./tests-out/example.svg', svg.svg(), { encoding: 'utf8' })
 });

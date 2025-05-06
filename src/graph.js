@@ -3,31 +3,28 @@
  */
 
 import { OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
-
-export const ALIGN_LEFT = 1;
-export const ALIGN_CENTER = 2;
-export const ALIGN_RIGHT = 3;
+import { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } from "./graphics.js";
 
 export function graph(_objs, rootCall, g) {
 
   function minmax(node) {
-
     var min = Math.min(node.parent.objIndex, node.objIndex);
     var max = Math.max(node.parent.objIndex, node.objIndex);
+
     for (var i = 0; i < node.nodes.length; i++) {
       min = Math.min(min, node.nodes[i].min);
       max = Math.max(max, node.nodes[i].max);
     }
+
     if (node.later) {
       for (var i = 0; i < node.later.length; i++) {
         min = Math.min(min, node.later[i].min);
         max = Math.max(max, node.later[i].max);
       }
     }
+
     return { min: min, max: max };
   }
-
-
 
   var root = null;
   var objs = null;
@@ -46,6 +43,7 @@ export function graph(_objs, rootCall, g) {
     errors = [];
     notes = [];
     refs = [];
+
     for (var i = 0; i < objs.length; i++) {
       objs[i].marks = [];
       objs[i].lifeEvents = [];
@@ -56,13 +54,14 @@ export function graph(_objs, rootCall, g) {
 
   function init() {
 
-
     function drawLifes() {
 
       if (this.lifeEvents.length > 0) {
         var createdAt = (this.lifeEvents[0].event == OBJ_CREATED ? -1 : 0);
+
         for (var i = 0; i < this.lifeEvents.length; i++) {
           var ev = this.lifeEvents[i];
+
           if (ev.event == OBJ_CREATED && createdAt == -1) {
             createdAt = ev.y;
           } else if (ev.event == OBJ_DESTROYED) {
@@ -71,14 +70,13 @@ export function graph(_objs, rootCall, g) {
             createdAt = -1;
           }
         }
+
         if (this.lifeEvents[this.lifeEvents.length - 1].event == OBJ_CREATED && createdAt != -1) {
           g.dashedLine(this.x, y(createdAt) + g.rowSpacing() / 2, this.x, y(maxY + 1));
         }
       } else {
         g.dashedLine(this.x, y(0) + g.rowSpacing() / 2, this.x, y(maxY + 1));
       }
-
-
     }
 
     function drawObjs() {
@@ -88,34 +86,23 @@ export function graph(_objs, rootCall, g) {
         if (this.cls == "actor") {
           g.actor(x, y(yPos) - g.rowSpacing() / 2, g.rowSpacing());
           if (this.name != "") {
-            g.align(ALIGN_CENTER);
-            g.text(this.name, x, y(yPos) + g.rowSpacing() / 2);
+            g.text(this.name, x, y(yPos) + g.rowSpacing() / 2,ALIGN_CENTER);
           }
         } else if (this.cls == "boundary") {
           g.boundary(x, y(yPos) - g.rowSpacing() / 2, g.rowSpacing());
-          g.align(ALIGN_CENTER);
-          g.text(this.name, x, y(yPos) + g.rowSpacing() / 2);
+          g.text(this.name, x, y(yPos) + g.rowSpacing() / 2,ALIGN_CENTER);
         } else if (this.cls == "control") {
           g.control(x, y(yPos) - g.rowSpacing() / 2, g.rowSpacing());
-          g.align(ALIGN_CENTER);
-          g.text(this.name, x, y(yPos) + g.rowSpacing() / 2);
+          g.text(this.name, x, y(yPos) + g.rowSpacing() / 2,ALIGN_CENTER);
         } else if (this.cls == "entity") {
           g.entity(x, y(yPos) - g.rowSpacing() / 2, g.rowSpacing());
-          g.align(ALIGN_CENTER);
-          g.text(this.name, x, y(yPos) + g.rowSpacing() / 2);
+          g.text(this.name, x, y(yPos) + g.rowSpacing() / 2,ALIGN_CENTER);
         } else {
           var w = g.widthOf(this.getText());
           var left = Math.floor(x - w / 2 - 5);
-          g.context.save();
-          var grd = g.context.createLinearGradient(left, y(yPos), left, y(yPos) + g.rowSpacing());
-          grd.addColorStop(0, g.config.gradLight);
-          grd.addColorStop(1, g.config.gradDark);
-          g.context.fillStyle = grd;
-          g.context.fillRect(left, y(yPos) - g.rowSpacing() / 2, Math.ceil(w + 5 * 2), g.rowSpacing());
-          g.context.restore();
-          g.strokeRect(left, y(yPos) - g.rowSpacing() / 2, Math.ceil(w + 5 * 2), g.rowSpacing());
-          g.align(ALIGN_CENTER);
-          g.text(this.getText(), x, y(yPos) - g.config.fontSize + g.rowSpacing() / 2);
+
+          g.fillRect(left, y(yPos) - g.rowSpacing() / 2, Math.ceil(w + 5 * 2), g.rowSpacing());
+          g.text(this.getText(), x, y(yPos) - g.config.fontSize + g.rowSpacing() / 2,ALIGN_CENTER);
         }
       };
       if (this.lifeEvents.length > 0) {
@@ -216,15 +203,9 @@ export function graph(_objs, rootCall, g) {
   function leftRight(oFrom, oTo, y) {
 
     if (oFrom == undefined || oTo == undefined || y == undefined) {
-      //			console.log(oFrom);
-      //			console.log(oTo);
-      //			console.log(y);
       throw new Exception();
     }
     if (isNaN(oFrom.objIndex) || isNaN(oTo.objIndex) || isNaN(y)) {
-      //			console.log(oFrom);
-      //			console.log(oTo);
-      //			console.log(y);
       throw new Exception();
     }
     var l = Math.min(oFrom.objIndex, oTo.objIndex);
@@ -293,23 +274,6 @@ export function graph(_objs, rootCall, g) {
     }
     if (y3 > maxY) maxY = y3;
     return y;
-  }
-
-  function displayMarks() {
-    console.log("displayMarks");
-    for (var y = 0; y <= maxY; y++) {
-      var line = (y < 100 ? " " : "") + (y < 10 ? " " : "") + y + " : ";
-      var wasMark = false;
-      for (var x = 0; x < objs.length; x++) {
-        if (objs[x].marks[y]) {
-          line += "X";
-          wasMark = true;
-        } else {
-          line += "-";
-        }
-      }
-      console.log(line);
-    }
   }
 
   function layoutFrame(f) {
@@ -559,22 +523,22 @@ export function graph(_objs, rootCall, g) {
     return max;
   }
 
-  function maxRight(x, y1, y2) {
-    var max = 0;
-    for (var i = 0; i < invocations.length; i++) {
-      var inv = invocations[i];
-      if (inv.objIndex != x) continue;
-      if (inv.top > y2) continue;
-      if (inv.bottom < y1) continue;
-      if (inv.objIndex == inv.parent.objIndex) {
-        max = Math.max(max, (inv.level + 2) * (WIDTH / 2));
-        max = Math.max(max, (inv.level) * (WIDTH / 2) + g.widthOf(inv.name + (inv.params ? "( " + inv.params + " )" : "")));
-      } else {
-        max = Math.max(max, (inv.level) * (WIDTH / 2));
-      }
-    }
-    return max;
-  }
+  // function maxRight(x, y1, y2) {
+  //   var max = 0;
+  //   for (var i = 0; i < invocations.length; i++) {
+  //     var inv = invocations[i];
+  //     if (inv.objIndex != x) continue;
+  //     if (inv.top > y2) continue;
+  //     if (inv.bottom < y1) continue;
+  //     if (inv.objIndex == inv.parent.objIndex) {
+  //       max = Math.max(max, (inv.level + 2) * (WIDTH / 2));
+  //       max = Math.max(max, (inv.level) * (WIDTH / 2) + g.widthOf(inv.name + (inv.params ? "( " + inv.params + " )" : "")));
+  //     } else {
+  //       max = Math.max(max, (inv.level) * (WIDTH / 2));
+  //     }
+  //   }
+  //   return max;
+  // }
 
   function countInvocationsAt(x, y) {
     var n = 0;
@@ -588,16 +552,16 @@ export function graph(_objs, rootCall, g) {
     return n;
   }
 
-  function labelWidth(l) {
-    if (l.name == "state") {
-      var radius = 15;
-      return g.widthOf(l.text ? l.text : "") + radius * 2;
-    } else if (l.name == "invariant") {
-      return g.widthOf("{" + (l.text ? l.text : "") + "}");
-    } else {
-      return 0;
-    }
-  }
+  // function labelWidth(l) {
+  //   if (l.name == "state") {
+  //     var radius = 15;
+  //     return g.widthOf(l.text ? l.text : "") + radius * 2;
+  //   } else if (l.name == "invariant") {
+  //     return g.widthOf("{" + (l.text ? l.text : "") + "}");
+  //   } else {
+  //     return 0;
+  //   }
+  // }
 
   function drawRef(r) {
 
@@ -653,11 +617,9 @@ export function graph(_objs, rootCall, g) {
     g.context.stroke();
     g.context.restore();
 
-    g.align(ALIGN_LEFT);
-    g.text("ref", xl + 5, y(top + 1) - g.config.fontSize);
+    g.text("ref", xl + 5, y(top + 1) - g.config.fontSize,ALIGN_LEFT);
 
-    g.align(ALIGN_CENTER);
-    g.text(text, c, y(top + 2) - g.config.fontSize);
+    g.text(text, c, y(top + 2) - g.config.fontSize,ALIGN_CENTER);
   }
 
   function drawLabel(r) {
@@ -672,24 +634,21 @@ export function graph(_objs, rootCall, g) {
       var objX = objs[r.x].x + (invs - 1) * 5;
 
       var radius = 5;// TODO same as measure width?
-      g.align(ALIGN_CENTER);
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
       g.roundRect(left, y(r.top), w, y(r.bottom) - y(r.top), radius);
       if (r.text) {
-        g.align(ALIGN_CENTER);
-        g.text(r.text, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2);
+        g.text(r.text, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
       }
     } else if (r.name == "invariant") {
       const invs = objs[r.x].maxInvocationDepth(r.top, r.top);
       var objX = objs[r.x].x + (invs - 1) * 5;
       const txt = "{" + (r.text ? r.text : "") + "}"
-      g.align(ALIGN_CENTER);
       var radius = 5;// TODO same as measure width?
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
       g.transparentRect(left, y(r.top), w, y(r.bottom) - y(r.top));
-      g.text(txt, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2);
+      g.text(txt, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
     }
   }
 
@@ -718,15 +677,14 @@ export function graph(_objs, rootCall, g) {
 
     if (f.layoutInfo.splits) {
 
-      g.align(ALIGN_LEFT);
       for (var i = 0; i < f.layoutInfo.splits.length; i++) {
         var text = f.layoutInfo.splits[i].text;
-        if (text) g.text("[ " + text + " ]", xx + 5, y(f.layoutInfo.splits[i].top + 1));
+        if (text) g.text("[ " + text + " ]", xx + 5, y(f.layoutInfo.splits[i].top + 1),ALIGN_LEFT);
         if (i == 0) continue; // don't draw line for first sub-frame
         g.dashedLine(xx, y(f.layoutInfo.splits[i].top), xx + w, y(f.layoutInfo.splits[i].top));
       }
     }
-
+console.log(f)
     var tw = g.widthOf(f.name);
     g.context.save();
     var grd = g.context.createLinearGradient(xx, yy, xx, y(f.top + 1));
@@ -743,36 +701,8 @@ export function graph(_objs, rootCall, g) {
     g.context.stroke();
     g.context.restore();
 
-    g.align(ALIGN_LEFT);
-    g.text(f.name, xx + 5, y(f.top + 1) - g.config.fontSize);
-    if (str(f.params)) g.text("[ " + f.params + " ]", xx + 5, y(f.top + 2));
-  }
-
-  function drawDiagramFrame(f) {
-
-    g.strokeRect(0, 0, g.canvas.width - 1, g.canvas.height - 1);
-
-    var width = Math.ceil(g.widthOf(f.params));
-    var left = 0;
-    var top = 0;
-    var bottom = g.rowSpacing();
-    g.context.save();
-    var grd = g.context.createLinearGradient(left, top, left, bottom);
-    grd.addColorStop(0, g.config.gradLight);
-    grd.addColorStop(1, g.config.gradDark);
-    g.context.fillStyle = grd;
-    g.context.beginPath();
-    g.context.moveTo(left, top);
-    g.context.lineTo(left, bottom);
-    g.context.lineTo(left + width + 5, bottom); // across
-    g.context.lineTo(left + width + 15, bottom - 10); // angled corner
-    g.context.lineTo(left + width + 15, top); // side
-    g.context.fill();
-    g.context.stroke();
-    g.context.restore();
-
-    g.align(ALIGN_LEFT);
-    g.text(f.params, left + 5, bottom - g.config.fontSize);
+    g.text(f.name, xx + 5, y(f.top + 1) - g.config.fontSize,ALIGN_LEFT);
+    if (str(f.params)) g.text("[ " + f.params + " ]", xx + 5, y(f.top + 2),ALIGN_LEFT);
   }
 
   function drawLine(l) {
@@ -800,8 +730,7 @@ export function graph(_objs, rootCall, g) {
       toX = fromX + width + WIDTH;
       g.line(fromX, y(l.y), toX, y(l.y));
 
-      g.align(ALIGN_LEFT);
-      g.text(l.text, fromX + 3, y(l.y));
+      g.text(l.text, fromX + 3, y(l.y),ALIGN_LEFT);
       g.rightArrow(toX, y(l.y));
       g.circle(toX + WIDTH / 2, y(l.y), WIDTH / 2);
 
@@ -812,8 +741,7 @@ export function graph(_objs, rootCall, g) {
       toX = toX - WIDTH / 2;
       g.line(fromX, y(l.y), toX, y(l.y));
 
-      g.align(ALIGN_LEFT);
-      g.text(l.text, fromX + 3, y(l.y));
+      g.text(l.text, fromX + 3, y(l.y),ALIGN_LEFT);
       g.rightArrow(toX, y(l.y));
       g.circle(fromX - WIDTH / 2, y(l.y), WIDTH / 2);
 
@@ -826,8 +754,7 @@ export function graph(_objs, rootCall, g) {
       fromX += WIDTH / 2;
       toX += WIDTH / 2;
       var vertX = Math.max(fromX, toX) + WIDTH;
-      g.align(ALIGN_LEFT);
-      g.text(l.text, fromX + 3, y(l.y));
+      g.text(l.text, fromX + 3, y(l.y),ALIGN_LEFT);
       if (l.style[0]) {
         g.line(fromX, y(l.y), vertX, y(l.y));
         g.line(vertX, y(l.y), vertX, y(l.y + 1));
@@ -866,8 +793,7 @@ export function graph(_objs, rootCall, g) {
         }
         g.dashedLine(fromX, y(l.y), toX, y(l.y));
       }
-      g.align((l.from.objIndex < l.to.objIndex ? ALIGN_LEFT : ALIGN_RIGHT));
-      g.text(l.text, fromX + (fromX < toX ? 3 : -3), y(l.y));
+      g.text(l.text, fromX + (fromX < toX ? 3 : -3), y(l.y),l.from.objIndex < l.to.objIndex ? ALIGN_LEFT : ALIGN_RIGHT);
       if (l.style[1]) {
         if (fromX < toX) g.solidRightArrow(toX, y(l.y));
         else g.solidLeftArrow(toX, y(l.y));
@@ -878,12 +804,12 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-  function text(str, x, yGrid) {
-    g.context.save();
-    g.context.fillStyle = "red";
-    g.text(str, objs[x].x, y(yGrid));
-    g.context.restore();
-  }
+  // function text(str, x, yGrid) {
+  //   g.context.save();
+  //   g.context.fillStyle = "red";
+  //   g.text(str, objs[x].x, y(yGrid));
+  //   g.context.restore();
+  // }
 
   function sortInvocations() {
     // sort by objIndex's then top's
@@ -908,14 +834,14 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-  function level(x, y) {
-    var count = 0;
-    for (var i = 0; i < invocations.length; i++) {
-      var inv = invocations[i];
-      if (inv.objIndex == x && inv.top <= y && (inv.bottom == undefined || inv.bottom >= y)) count++;
-    }
-    return count;
-  }
+  // function level(x, y) {
+  //   var count = 0;
+  //   for (var i = 0; i < invocations.length; i++) {
+  //     var inv = invocations[i];
+  //     if (inv.objIndex == x && inv.top <= y && (inv.bottom == undefined || inv.bottom >= y)) count++;
+  //   }
+  //   return count;
+  // }
 
   function drawInvocation(i) {
     var x = objs[i.objIndex].x + WIDTH / 2 * (i.level - 1);
@@ -938,26 +864,26 @@ export function graph(_objs, rootCall, g) {
 
   //top==undefined means not layed out yet
   //bottom==undefined means bottom not layed out yet
-  function maxLevel(x, y) {
-    var max = -1;
-    for (var i = 0; i < invocations.length; i++) {
-      var inv = invocations[i];
-      if (inv.level == undefined) continue;
-      if (inv.objIndex != x) continue;
-      if (inv.top == undefined) continue;
-      if (inv.top > y) continue;
-      if (inv.bottom == undefined) {
-        max = Math.max(max, inv.level);
-      } else if (inv.bottom >= y) {
-        max = Math.max(max, inv.level);
-      }
-    }
-    return max;
-  }
+  // function maxLevel(x, y) {
+  //   var max = -1;
+  //   for (var i = 0; i < invocations.length; i++) {
+  //     var inv = invocations[i];
+  //     if (inv.level == undefined) continue;
+  //     if (inv.objIndex != x) continue;
+  //     if (inv.top == undefined) continue;
+  //     if (inv.top > y) continue;
+  //     if (inv.bottom == undefined) {
+  //       max = Math.max(max, inv.level);
+  //     } else if (inv.bottom >= y) {
+  //       max = Math.max(max, inv.level);
+  //     }
+  //   }
+  //   return max;
+  // }
 
-  function calcLevel(x, y) {
-    return maxLevel(x, y) + 1;
-  }
+  // function calcLevel(x, y) {
+  //   return maxLevel(x, y) + 1;
+  // }
 
   function countLinesUnder() {
     // find lines to/from right of this.objIndex between top and bottom
@@ -2197,19 +2123,15 @@ export function graph(_objs, rootCall, g) {
     return nodes;
   }
 
-  function drawYs() {
-    for (let i = 0; i <= maxY; i++) {
-      g.text("y=" + i, 20, y(i))
-    }
-  }
+  // function drawYs() {
+  //   for (let i = 0; i <= maxY; i++) {
+  //     g.text("y=" + i, 20, y(i))
+  //   }
+  // }
 
 
   if (_objs.length == 0) {
     _objs.push(new ckwnc.Obj("", "actor"));
-    //		var w = g.widthOf("ckwnc.com")+10;
-    //		g.setSize(w,g.config.fontSize*8);
-    //		g.align(ALIGN_CENTER);
-    //		g.text("ckwnc.com",g.canvas.width/2,g.config.fontSize*8);
   }
 
   var diagramFrame = null;
@@ -2248,9 +2170,8 @@ export function graph(_objs, rootCall, g) {
 
     //drawYs()
 
-    if (diagramFrame != null) drawDiagramFrame(diagramFrame);
-    g.align(ALIGN_RIGHT);
-    g.text("ckwnc.com", dim.w - 5, dim.h - 2, "#FF6600");
+    if (diagramFrame != null) g.drawDiagramFrame(diagramFrame);
+    g.link("http://seqcode.app","seqcode.app", dim.w - 5, dim.h - 2,ALIGN_RIGHT);
   } catch (e) {
     console.log(e);
   }
