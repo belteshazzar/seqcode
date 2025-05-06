@@ -5,8 +5,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(resolve(), 'src/main.js'), // Entry point of your library
-      name: 'Coded Sequence', // Replace with your library name
-      fileName: (format) => `coded-sequence.js`, // Output file name
+      name: 'SeqCode', // Replace with your library name
+      fileName: (format) => `seqcode.js`, // Output file name
       formats: ['es'], // Output formats (ES module and UMD)
     },
     rollupOptions: {
