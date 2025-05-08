@@ -2,7 +2,7 @@
  * All Rights Reserved.
  */
 
-import { OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
+import { Obj, OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
 import { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } from "./graphics.js";
 
 export function graph(_objs, rootCall, g) {
@@ -34,7 +34,7 @@ export function graph(_objs, rootCall, g) {
   var DEFER_ASYNC = true;
   var errors = [];
   var notes = [];
-  var refs = [];
+  // var refs = [];
 
   function reset() {
     lines = [];
@@ -101,8 +101,7 @@ export function graph(_objs, rootCall, g) {
           var w = g.widthOf(this.getText());
           var left = Math.floor(x - w / 2 - 5);
 
-          g.fillRect(left, y(yPos) - g.rowSpacing() / 2, Math.ceil(w + 5 * 2), g.rowSpacing());
-          g.text(this.getText(), x, y(yPos) - g.config.fontSize + g.rowSpacing() / 2,ALIGN_CENTER);
+          g.fillRect(left, y(yPos) - g.rowSpacing() / 2, Math.ceil(w + 5 * 2), g.rowSpacing(),this.getText());
         }
       };
       if (this.lifeEvents.length > 0) {
@@ -131,7 +130,7 @@ export function graph(_objs, rootCall, g) {
     //		labels = [];
     maxY = 0;
     notes = [];
-    refs = [];
+    // refs = [];
 
     for (var i = 0; i < objs.length; i++) {
       objs[i].objIndex = i; // does this overlap with call objIndex?
@@ -597,29 +596,16 @@ export function graph(_objs, rootCall, g) {
     const c = left == right ? objs[left].x : objs[left].x + w2 - 20; // TODO: not quite right!
     const xl = c - w2;
 
-    g.fillRect(xl, y(top), w, y(bottom) - y(top));
-    g.strokeRect(xl, y(top), w, y(bottom) - y(top));
+    g.fillRect(xl, y(top), w, y(bottom) - y(top),text);
+//    g.strokeRect(xl, y(top), w, y(bottom) - y(top));
 
-    g.addDiv(text, xl, y(top), w, y(bottom) - y(top));
+//    g.addDiv(text, xl, y(top), w, y(bottom) - y(top));
 
-    g.context.save();
-    var grd = g.context.createLinearGradient(xl, y(top), xl, y(bottom));
-    grd.addColorStop(0, g.config.gradLight);
-    grd.addColorStop(1, g.config.gradDark);
-    g.context.fillStyle = grd;
-    g.context.beginPath();
-    g.context.moveTo(xl, y(top)); // top left corner
-    g.context.lineTo(xl, y(top + 1)); // down
-    g.context.lineTo(xl + tw + 5, y(top + 1)); // across
-    g.context.lineTo(xl + tw + 15, y(top + 1) - 10); // angled corner
-    g.context.lineTo(xl + tw + 15, y(top)); // side
-    g.context.fill();
-    g.context.stroke();
-    g.context.restore();
+    g.frameLabel(xl,y(top),tw+15,y(top+1)-y(top),"ref")
 
-    g.text("ref", xl + 5, y(top + 1) - g.config.fontSize,ALIGN_LEFT);
+    // g.text("ref", xl + 5, y(top + 1) - g.config.fontSize,ALIGN_LEFT);
 
-    g.text(text, c, y(top + 2) - g.config.fontSize,ALIGN_CENTER);
+//    g.text(text, c, y(top + 2) - g.config.fontSize,ALIGN_CENTER);
   }
 
   function drawLabel(r) {
@@ -636,10 +622,10 @@ export function graph(_objs, rootCall, g) {
       var radius = 5;// TODO same as measure width?
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
-      g.roundRect(left, y(r.top), w, y(r.bottom) - y(r.top), radius);
-      if (r.text) {
-        g.text(r.text, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
-      }
+      g.roundRect(left, y(r.top), w, y(r.bottom) - y(r.top), radius, r.text);
+      // if (r.text) {
+      //   g.text(r.text, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
+      // }
     } else if (r.name == "invariant") {
       const invs = objs[r.x].maxInvocationDepth(r.top, r.top);
       var objX = objs[r.x].x + (invs - 1) * 5;
@@ -647,8 +633,9 @@ export function graph(_objs, rootCall, g) {
       var radius = 5;// TODO same as measure width?
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
-      g.transparentRect(left, y(r.top), w, y(r.bottom) - y(r.top));
-      g.text(txt, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
+      g.transparentRect(left, y(r.top), w, y(r.bottom) - y(r.top), txt);
+      // console.log(txt)
+      // g.text(txt, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
     }
   }
 
@@ -684,24 +671,12 @@ export function graph(_objs, rootCall, g) {
         g.dashedLine(xx, y(f.layoutInfo.splits[i].top), xx + w, y(f.layoutInfo.splits[i].top));
       }
     }
-console.log(f)
-    var tw = g.widthOf(f.name);
-    g.context.save();
-    var grd = g.context.createLinearGradient(xx, yy, xx, y(f.top + 1));
-    grd.addColorStop(0, g.config.gradLight);
-    grd.addColorStop(1, g.config.gradDark);
-    g.context.fillStyle = grd;
-    g.context.beginPath();
-    g.context.moveTo(xx, yy);
-    g.context.lineTo(xx, y(f.top + 1)); // down
-    g.context.lineTo(xx + tw + 5, y(f.top + 1)); // across
-    g.context.lineTo(xx + tw + 15, y(f.top + 1) - 10); // angled corner
-    g.context.lineTo(xx + tw + 15, y(f.top)); // side
-    g.context.fill();
-    g.context.stroke();
-    g.context.restore();
 
-    g.text(f.name, xx + 5, y(f.top + 1) - g.config.fontSize,ALIGN_LEFT);
+    var tw = g.widthOf(f.name);
+
+    g.frameLabel(xx,yy,tw+15,y(f.top+1)-yy, f.name)
+
+    // g.text(f.name, xx + 5, y(f.top + 1) - g.config.fontSize,ALIGN_LEFT);
     if (str(f.params)) g.text("[ " + f.params + " ]", xx + 5, y(f.top + 2),ALIGN_LEFT);
   }
 
@@ -909,1147 +884,1181 @@ console.log(f)
     return results;
   };
 
-  function Note(call) {
-    this.params = call.params;
-  };
-
-  Note.prototype.layout = function () {
-    var ss = this.params.split(",");
-    if (ss.length < 4) {
-      errors.push("note wrong number of params for note: " + this.params);
-      return;
+  class Note {
+    constructor(call) {
+      this.params = call.params;
     }
-    var x = parseInt(ss[0]);
-    var y = parseInt(ss[1]);
-    var w = parseInt(ss[2]);
-    if (isNaN(x) || x != ss[0] || isNaN(y) || y != ss[1] || isNaN(w) || w != ss[2]) {
-      errors.push("note position param not a number: " + this.params);
-      return;
+    layout() {
+      var ss = this.params.split(",");
+      if (ss.length < 4) {
+        errors.push("note wrong number of params for note: " + this.params);
+        return;
+      }
+      var x = parseInt(ss[0]);
+      var y = parseInt(ss[1]);
+      var w = parseInt(ss[2]);
+      if (isNaN(x) || x != ss[0] || isNaN(y) || y != ss[1] || isNaN(w) || w != ss[2]) {
+        errors.push("note position param not a number: " + this.params);
+        return;
+      }
+      ss.shift();
+      ss.shift();
+      ss.shift();
+      var txt = ss.join(",");
+      this.info = g.layoutNote(x, y, w, txt);
     }
-    ss.shift();
-    ss.shift();
-    ss.shift();
-    var txt = ss.join(",");
-    this.info = g.layoutNote(x, y, w, txt);
-  };
-
-  Note.prototype.draw = function () {
-    if (this.info) g.drawNote(this.info);
-  };
-
-
-  function FoundMessage(parent, call) {
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.min = this.objIndex;
-    this.max = this.objIndex;
-    objs[this.objIndex].alive = true;
-  };
-
-  FoundMessage.prototype.text = function () {
-    return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
-  };
-
-  FoundMessage.prototype.check = function () {
-    return true;
-  };
-
-  FoundMessage.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    return maxY;
-  };
-
-  FoundMessage.prototype.layout = function (y) {
-    this.top = mark(this.parent, this, y);
-    objs[this.objIndex].addFoundMessage(this);
-    line(this.text(), this.parent, this.parent, this.top, FOUND);
-    this.bottom = this.top;
-    return this.bottom;
+    draw() {
+      if (this.info) g.drawNote(this.info);
+    }
   };
 
 
 
 
-  function Message(parent, call) {
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    objs[this.objIndex].alive = true;
-    this.nodes = createNodes(this, call.subCalls);
-    if (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage) {
-        if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-          this.nodes.length--;
-          this.returns = last.params;
+  class FoundMessage {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.min = this.objIndex;
+      this.max = this.objIndex;
+      objs[this.objIndex].alive = true;
+    }
+    text() {
+      return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    check() {
+      return true;
+    }
+    findMaxY() {
+      var maxY = this.bottom;
+      return maxY;
+    }
+    layout(y) {
+      this.top = mark(this.parent, this, y);
+      objs[this.objIndex].addFoundMessage(this);
+      line(this.text(), this.parent, this.parent, this.top, FOUND);
+      this.bottom = this.top;
+      return this.bottom;
+    }
+  };
+
+
+
+
+
+
+
+
+  class Message {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      objs[this.objIndex].alive = true;
+      this.nodes = createNodes(this, call.subCalls);
+      if (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage) {
+          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
+            this.nodes.length--;
+            this.returns = last.params;
+          }
         }
       }
-    }
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
       }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
     }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-  };
-
-  Message.prototype.text = function () {
-    return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-  };
-
-  Message.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
     }
-    return maxY;
-  };
-
-  Message.prototype.check = function () {
-    // backwards
-    if (this.parent.objIndex > this.objIndex) {
-      var lines = countLinesUnder.call(this);
-      if (lines.length > 0) {
-        // insert pause before me
-        // find my index
-        var me = 0;
-        while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
-        this.parent.nodes.splice(me, 0, new Pause(this.parent));
-        return false;
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    check() {
+      // backwards
+      if (this.parent.objIndex > this.objIndex) {
+        var lines = countLinesUnder.call(this);
+        if (lines.length > 0) {
+          // insert pause before me
+          // find my index
+          var me = 0;
+          while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
+          this.parent.nodes.splice(me, 0, new Pause(this.parent));
+          return false;
+        } else {
+          for (var i = 0; i < this.nodes.length; i++) {
+            if (!this.nodes[i].check()) return false;
+          }
+          return true;
+        }
       } else {
         for (var i = 0; i < this.nodes.length; i++) {
           if (!this.nodes[i].check()) return false;
         }
         return true;
       }
-    } else {
+    }
+    layout(y) {
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      var deferred = [];
+      this.top = mark(this.parent, this, y);
+      line(this.text(), this.parent, this, this.top, CALL);
+      y = this.top + 1;
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else {
+          y = lo;
+        }
+      }
+      this.bottom = mark(this, this.parent, y);
+      line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN);
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+      y = this.bottom + 1;
+      layoutLater(this, y);
+      return this.bottom;
+    }
+  };
+
+
+
+
+
+  ///////////////////////////////////////////
+
+
+  class RefMessage {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      objs[this.objIndex].alive = true;
+      this.min = Math.min(this.objIndex, parent.objIndex);
+      this.max = Math.max(this.objIndex, parent.objIndex);
+    }
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    findMaxY() {
+      return this.bottom;
+    }
+    check() {
+      return true;
+    }
+    layout(y) {
+      this.top = mark4(objs[this.min], objs[this.max], y);
+      this.bottom = this.top + 3;
+      y = this.bottom + 1;
+
+      const fakeLabel = { top: this.top, bottom: this.bottom, params: "x" };
+      objs[this.min].addLabel(fakeLabel);
+      objs[this.max].addLabel(fakeLabel);
+      line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, this.top, REF);
+      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max, x: this.objIndex };
+      return this.bottom;
+    }
+  };
+
+
+
+
+
+
+  ///////////////////////////////////////////
+  class Pause {
+    constructor(parent) {
+      this.parent = parent;
+      this.objIndex = parent.objIndex;
+      this.min = parent.objIndex;
+      this.max = parent.objIndex;
+    }
+    text() {
+      throw "Pause.text";
+    }
+    findMaxY() {
+      return this.bottom;
+    }
+    check() {
+      return true;
+    }
+    layout(y) {
+      this.top = mark(this, this, y);
+      this.bottom = this.top;
+      return this.bottom;
+    }
+  };
+
+
+
+
+
+  class SelfMessage {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      objs[this.objIndex].alive = true;
+      this.nodes = createNodes(this, call.subCalls);
+      if (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage) {
+          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
+            this.nodes.length--;
+            this.returns = last.params;
+          }
+        }
+      }
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+    }
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    check() {
       for (var i = 0; i < this.nodes.length; i++) {
         if (!this.nodes[i].check()) return false;
       }
       return true;
     }
-  }
-
-  Message.prototype.layout = function (y) {
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    var deferred = [];
-    this.top = mark(this.parent, this, y);
-    line(this.text(), this.parent, this, this.top, CALL);
-    y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    layout(y) {
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      var deferred = [];
+      if (this.islater) {
+        this.top = mark(this.parent, this, y);
       } else {
-        y = lo;
+        this.msgTop = mark(this.parent, this, y);
+        this.top = mark(this.parent, this, this.msgTop);
+        line(this.text(), this.parent, this, this.msgTop, CALL); // MIGHT NOT JOIN!!!!!!!
       }
-    }
-    this.bottom = mark(this, this.parent, y);
-    line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN);
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    y = this.bottom + 1;
-    layoutLater(this, y);
-    return this.bottom;
-  };
 
-  ///////////////////////////////////////////
+      objs[this.objIndex].addSelfMessage(this);
 
-
-  function RefMessage(parent, call) {
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    objs[this.objIndex].alive = true;
-    this.min = Math.min(this.objIndex, parent.objIndex);
-    this.max = Math.max(this.objIndex, parent.objIndex);
-  };
-
-  RefMessage.prototype.text = function () {
-    return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-  };
-
-  RefMessage.prototype.findMaxY = function () {
-    return this.bottom;
-  };
-
-  RefMessage.prototype.check = function () {
-    return true;
-  }
-
-  RefMessage.prototype.layout = function (y) {
-    this.top = mark4(objs[this.min], objs[this.max], y);
-    this.bottom = this.top + 3;
-    y = this.bottom + 1;
-
-    const fakeLabel = { top: this.top, bottom: this.bottom, params: "x" };
-    objs[this.min].addLabel(fakeLabel);
-    objs[this.max].addLabel(fakeLabel);
-    line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, this.top, REF);
-    this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max, x: this.objIndex };
-    return this.bottom;
-  };
-
-
-  ///////////////////////////////////////////
-  function Pause(parent) {
-    this.parent = parent;
-    this.objIndex = parent.objIndex;
-    this.min = parent.objIndex;
-    this.max = parent.objIndex;
-  };
-
-  Pause.prototype.text = function () {
-    throw "Pause.text";
-  };
-
-  Pause.prototype.findMaxY = function () {
-    return this.bottom;
-  };
-
-  Pause.prototype.check = function () {
-    return true;
-  };
-
-  Pause.prototype.layout = function (y) {
-    this.top = mark(this, this, y);
-    this.bottom = this.top;
-    return this.bottom;
-  };
-
-  function SelfMessage(parent, call) {
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    objs[this.objIndex].alive = true;
-    this.nodes = createNodes(this, call.subCalls);
-    if (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage) {
-        if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-          this.nodes.length--;
-          this.returns = last.params;
-        }
+      y = this.top + 1;
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
       }
-    }
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
+      this.bottom = mark(this, this, y);
+      if (!this.islater) {
+        this.msgBottom = mark(this.parent, this, this.bottom);
+        line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN); // MIGHT NOT JOIN!!!!!!!
       }
-    }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-  };
-
-  SelfMessage.prototype.text = function () {
-    return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-  };
-
-  SelfMessage.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
-
-  SelfMessage.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
-
-  SelfMessage.prototype.layout = function (y) {
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    var deferred = [];
-    if (this.islater) {
-      this.top = mark(this.parent, this, y);
-    } else {
-      this.msgTop = mark(this.parent, this, y);
-      this.top = mark(this.parent, this, this.msgTop);
-      line(this.text(), this.parent, this, this.msgTop, CALL); // MIGHT NOT JOIN!!!!!!!
-    }
-
-    objs[this.objIndex].addSelfMessage(this);
-
-    y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    this.bottom = mark(this, this, y);
-    if (!this.islater) {
-      this.msgBottom = mark(this.parent, this, this.bottom);
-      line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN); // MIGHT NOT JOIN!!!!!!!
-    }
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    if (this.islater) y = this.bottom + 1;
-    else y = this.bottom + 3;
-    //if (!this.islater) 
-    layoutLater(this, y);
-    return this.bottom;
-  };
-
-
-
-
-
-
-  function Root(call) {
-    this.parent = { objIndex: 0 };
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.frames = [];
-    this.inFrame = false;
-    this.labels = [];
-    this.lines = [];
-    objs[this.objIndex].alive = true;
-    this.nodes = createNodes(this, call.subCalls);
-    if (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage) {
-        if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-          this.nodes.length--;
-          this.returns = last.params;
-        }
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
       }
+      if (this.islater) y = this.bottom + 1;
+      else y = this.bottom + 3;
+      //if (!this.islater) 
+      layoutLater(this, y);
+      return this.bottom;
     }
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
-      }
-    }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-    this.level = 0;
   };
 
-  Root.prototype.text = function () {
-    return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-  };
 
-  Root.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
 
-  Root.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
 
-  Root.prototype.layout = function (y) {
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    this.top = mark(this.parent, this, y);
-    var deferred = [];
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    this.bottom = mark(this.parent, this, y);
 
-    layoutLater(this, this.bottom + 1);
 
-    return y;
-  };
 
-  function LostMessage(parent, call) {
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.min = this.objIndex;
-    this.max = this.objIndex;
-    objs[this.objIndex].alive = true;
-  };
 
-  LostMessage.prototype.text = function () {
-    return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
-  };
 
-  LostMessage.prototype.check = function () {
-    return true;
-  };
 
-  LostMessage.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    return maxY;
-  };
-
-  LostMessage.prototype.layout = function (y) {
-    this.top = mark(this.parent, this, y);
-    objs[this.objIndex].addLostMessage(this);
-    line(this.text(), this.parent, this.parent, this.top, LOST);
-    this.bottom = this.top;
-    return this.bottom;
-  };
-
-  function AsynchMessage(parent, call) {
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    objs[this.objIndex].alive = true;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    this.nodes = createNodes(this, call.subCalls);
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
-      }
-    }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-  };
-
-  AsynchMessage.prototype.check = function () {
-
-    // forwards
-    if (this.parent.objIndex < this.objIndex) {
-      var lines = countLinesUnder.call(this);
-      if (lines.length > 0) {
-        // insert pause before me
-        // find my index
-        var me = 0;
-        while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
-        this.parent.nodes.splice(me, 0, new Pause(this.parent));
-        return false;
-      } else {
-        for (var i = 0; i < this.nodes.length; i++) {
-          if (!this.nodes[i].check()) return false;
-        }
-        return true;
-      }
-    } else {
-      var lines = countLinesUnder.call(this);
-      if (lines.length > 0) {
-        for (var i = 0; i < lines.length; i++) {
-          // for each line add a pause at the end of the invocation
-          if (lines[i].from.objIndex == this.objIndex) {
-            // insert pause before me
-            // find my index
-            var me = 0;
-            while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
-            this.parent.nodes.splice(me, 0, new Pause(this.parent));
-            return false;
-          } else {
-            lines[i].from.nodes.push(new Pause(lines[i].from));
+  class Root {
+    constructor(call) {
+      this.parent = { objIndex: 0 };
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.frames = [];
+      this.inFrame = false;
+      this.labels = [];
+      this.lines = [];
+      objs[this.objIndex].alive = true;
+      this.nodes = createNodes(this, call.subCalls);
+      if (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage) {
+          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
+            this.nodes.length--;
+            this.returns = last.params;
           }
         }
-        return false;
-      } else {
-        for (var i = 0; i < this.nodes.length; i++) {
-          if (!this.nodes[i].check()) return false;
+      }
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
         }
-        return true;
+      }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+      this.level = 0;
+    }
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    layout(y) {
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      this.top = mark(this.parent, this, y);
+      var deferred = [];
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
+      }
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+      this.bottom = mark(this.parent, this, y);
+
+      layoutLater(this, this.bottom + 1);
+
+      return y;
+    }
+  };
+
+
+
+
+
+  class LostMessage {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.min = this.objIndex;
+      this.max = this.objIndex;
+      objs[this.objIndex].alive = true;
+    }
+    text() {
+      return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    check() {
+      return true;
+    }
+    findMaxY() {
+      var maxY = this.bottom;
+      return maxY;
+    }
+    layout(y) {
+      this.top = mark(this.parent, this, y);
+      objs[this.objIndex].addLostMessage(this);
+      line(this.text(), this.parent, this.parent, this.top, LOST);
+      this.bottom = this.top;
+      return this.bottom;
+    }
+  };
+
+
+
+
+
+  class AsynchMessage {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      objs[this.objIndex].alive = true;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      this.nodes = createNodes(this, call.subCalls);
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+    }
+    check() {
+
+      // forwards
+      if (this.parent.objIndex < this.objIndex) {
+        var lines = countLinesUnder.call(this);
+        if (lines.length > 0) {
+          // insert pause before me
+          // find my index
+          var me = 0;
+          while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
+          this.parent.nodes.splice(me, 0, new Pause(this.parent));
+          return false;
+        } else {
+          for (var i = 0; i < this.nodes.length; i++) {
+            if (!this.nodes[i].check()) return false;
+          }
+          return true;
+        }
+      } else {
+        var lines = countLinesUnder.call(this);
+        if (lines.length > 0) {
+          for (var i = 0; i < lines.length; i++) {
+            // for each line add a pause at the end of the invocation
+            if (lines[i].from.objIndex == this.objIndex) {
+              // insert pause before me
+              // find my index
+              var me = 0;
+              while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
+              this.parent.nodes.splice(me, 0, new Pause(this.parent));
+              return false;
+            } else {
+              lines[i].from.nodes.push(new Pause(lines[i].from));
+            }
+          }
+          return false;
+        } else {
+          for (var i = 0; i < this.nodes.length; i++) {
+            if (!this.nodes[i].check()) return false;
+          }
+          return true;
+        }
       }
     }
-  };
-
-  AsynchMessage.prototype.text = function () {
-    return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-  };
-
-  AsynchMessage.prototype.layout = function (y) {
-    this.done = false;
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    if (objs[this.objIndex].pendingAsynch != null) {
-      //objs[this.objIndex].pendingAsynch.deferredLayout();
-      objs[this.objIndex].pendingAsynch = null;
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
     }
-    this.top = mark(this.parent, this, y);
-    line(this.text(), this.parent, this, this.top, ASYNCH);
-    this.bottom = this.top + 1; // placeholder
-    if (!DEFER_ASYNC || this.parent.objIndex > this.objIndex) {
-      return this.deferredLayout();
-    } else {
+    layout(y) {
+      this.done = false;
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      if (objs[this.objIndex].pendingAsynch != null) {
+        //objs[this.objIndex].pendingAsynch.deferredLayout();
+        objs[this.objIndex].pendingAsynch = null;
+      }
+      this.top = mark(this.parent, this, y);
+      line(this.text(), this.parent, this, this.top, ASYNCH);
+      this.bottom = this.top + 1; // placeholder
+      if (!DEFER_ASYNC || this.parent.objIndex > this.objIndex) {
+        return this.deferredLayout();
+      } else {
+        objs[this.objIndex].pendingAsynch = this;
+        return this;
+      }
+    }
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    deferredLayout() {
+      if (!this.done) this.done = true;
+      else return;
+      var deferred = [];
+      var y = this.top + 1;
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
+      }
+      this.bottom = mark(this, this, y);
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+      y = this.bottom + 1;
+      layoutLater(this, y);
+      return this.top;
+    }
+  };
+
+
+
+
+
+
+  class AsynchSelfMessage {
+    constructor(parent, call) {
+
+      this.parent = parent;
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      objs[this.objIndex].alive = true;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      this.nodes = createNodes(this, call.subCalls);
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+    }
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    layout(y) {
+      this.done = false;
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      if (objs[this.objIndex].pendingAsynch != null) {
+        //objs[this.objIndex].pendingAsynch.deferredLayout();
+        objs[this.objIndex].pendingAsynch = null;
+      }
+
+      this.msgTop = mark(this.parent, this, y);
+      this.top = mark(this.parent, this, this.msgTop);
+
+      objs[this.objIndex].addSelfMessage(this); ////////////////////// TEST
+
+      line(this.text(), this.parent, this, this.msgTop, ASYNCH);
       objs[this.objIndex].pendingAsynch = this;
-      return this;
+      //if (DEFER_ASYNC) return this;
+      //else 
+      return this.deferredLayout();
     }
-  };
-
-  AsynchMessage.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
-
-  AsynchMessage.prototype.deferredLayout = function () {
-    if (!this.done) this.done = true;
-    else return;
-    var deferred = [];
-    var y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    this.bottom = mark(this, this, y);
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    y = this.bottom + 1;
-    layoutLater(this, y);
-    return this.top;
-  };
-
-  function AsynchSelfMessage(parent, call) {
-
-    this.parent = parent;
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    objs[this.objIndex].alive = true;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    this.nodes = createNodes(this, call.subCalls);
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
       }
+      return maxY;
     }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-  };
-
-  AsynchSelfMessage.prototype.text = function () {
-    return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-  };
-
-  AsynchSelfMessage.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
-
-  AsynchSelfMessage.prototype.layout = function (y) {
-    this.done = false;
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    if (objs[this.objIndex].pendingAsynch != null) {
-      //objs[this.objIndex].pendingAsynch.deferredLayout();
-      objs[this.objIndex].pendingAsynch = null;
-    }
-
-    this.msgTop = mark(this.parent, this, y);
-    this.top = mark(this.parent, this, this.msgTop);
-
-    objs[this.objIndex].addSelfMessage(this); ////////////////////// TEST
-
-    line(this.text(), this.parent, this, this.msgTop, ASYNCH);
-    objs[this.objIndex].pendingAsynch = this;
-    //if (DEFER_ASYNC) return this;
-    //else 
-    return this.deferredLayout();
-  };
-
-  AsynchSelfMessage.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
-
-  AsynchSelfMessage.prototype.deferredLayout = function () {
-    if (!this.done) this.done = true;
-    else return;
-    var deferred = [];
-    var y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    this.bottom = mark(this.parent, this, y);
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    y = this.bottom + 1;
-    layoutLater(this, y);
-    return this.top;
-  };
-
-  function Create(parent, call) {
-    this.parent = parent;
-    this.objIndex = call.objIndex;
-    objs[this.objIndex].alive = true;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    this.nodes = createNodes(this, call.subCalls);
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
+    deferredLayout() {
+      if (!this.done) this.done = true;
+      else return;
+      var deferred = [];
+      var y = this.top + 1;
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
       }
-    }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-  };
-
-  Create.prototype.text = function () {
-    return (this.error ? "create" : "<<create>>");
-  };
-
-  Create.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
-  Create.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
-
-  Create.prototype.layout = function (y) {
-    var deferred = [];
-    this.top = mark(this.parent, this, y);
-    this.error = (countInvocationsAt(this.objIndex, this.top) > 0);// || objs[this.objIndex].alive===true);
-    //		objs[this.objIndex].alive = true;
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    if (!this.error) {
-      if (objs[this.objIndex].cls == "actor"
-        || objs[this.objIndex].cls == "boundary"
-        || objs[this.objIndex].cls == "control"
-        || objs[this.objIndex].cls == "entity") {
-        this.top = mark(this.parent, this, this.top);
+      this.bottom = mark(this.parent, this, y);
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
       }
+      y = this.bottom + 1;
+      layoutLater(this, y);
+      return this.top;
     }
-    line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
-    y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    this.bottom = mark(this.parent, this, y);
-    if (!this.error) {
-      objs[this.objIndex].addLifeEvent({ event: OBJ_CREATED, y: this.top })
-    }
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    if (this.error) {
-      line("", this, this.parent, this.bottom, RETURN);
-    }
-    y = this.bottom + 1;
-    layoutLater(this, y);
-    return this.bottom;
   };
 
-  function Destroy(parent, call) {
-    this.parent = parent;
-    this.objIndex = call.objIndex;
-    objs[this.objIndex].alive = false;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    this.nodes = createNodes(this, call.subCalls);
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
+
+
+
+
+
+  class Create {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.objIndex = call.objIndex;
+      objs[this.objIndex].alive = true;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      this.nodes = createNodes(this, call.subCalls);
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+    }
+    text() {
+      return (this.error ? "create" : "<<create>>");
+    }
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    layout(y) {
+      var deferred = [];
+      this.top = mark(this.parent, this, y);
+      this.error = (countInvocationsAt(this.objIndex, this.top) > 0); // || objs[this.objIndex].alive===true);
+
+      //		objs[this.objIndex].alive = true;
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      if (!this.error) {
+        if (objs[this.objIndex].cls == "actor"
+          || objs[this.objIndex].cls == "boundary"
+          || objs[this.objIndex].cls == "control"
+          || objs[this.objIndex].cls == "entity") {
+          this.top = mark(this.parent, this, this.top);
+        }
+      }
+      line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
+      y = this.top + 1;
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
+      }
+      this.bottom = mark(this.parent, this, y);
+      if (!this.error) {
+        objs[this.objIndex].addLifeEvent({ event: OBJ_CREATED, y: this.top });
+      }
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+      if (this.error) {
+        line("", this, this.parent, this.bottom, RETURN);
+      }
+      y = this.bottom + 1;
+      layoutLater(this, y);
+      return this.bottom;
+    }
   };
 
-  Destroy.prototype.text = function () {
-    return (this.error ? "destroy" : "<<destroy>>");
-  };
 
-  Destroy.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
 
-  Destroy.prototype.findMaxY = function () {
-    var maxY = this.bottom;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
 
-  Destroy.prototype.layout = function (y) {
-    var deferred = [];
-    this.top = mark(this.parent, this, y);
-    this.error = (countInvocationsAt(this.objIndex, this.top) > 0);// || objs[this.objIndex].alive===false);
-    invocations.push(this);
-    objs[this.objIndex].addInvocation(this);
-    line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
-    y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    this.bottom = mark(this, this, y);
-    if (!this.error) {
-      this.cross = mark(this, this, this.bottom);
-      objs[this.objIndex].addLifeEvent({ event: OBJ_DESTROYED, y: this.cross })
-    }
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-    if (this.error) {
-      line("", this, this.parent, this.bottom, RETURN);
-    } else {
+  class Destroy {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.objIndex = call.objIndex;
       objs[this.objIndex].alive = false;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      this.nodes = createNodes(this, call.subCalls);
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
     }
-    return (this.error ? this.bottom : this.cross);// y = lo + 1
-  };
-
-  function MultiFrame(parent, parts) {
-    this.parent = parent;
-    this.parent.frames.push(this);
-    this.frames = [];
-    this.inFrame = true;
-    this.labels = [];
-    this.lines = [];
-    this.name = parts[0].name;
-    this.objIndex = parent.objIndex;
-    this.nodes = [];
-    for (var i = 0; i < parts.length; i++) {
-      this.nodes.push(new MultiFramePart(this, parts[i]));
+    text() {
+      return (this.error ? "destroy" : "<<destroy>>");
     }
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-    for (var i = 0; i < this.nodes.length; i++) {
-      this.nodes[i].min = this.min;
-      this.nodes[i].max = this.max;
-    }
-    this.level = -1;
-  };
-
-  MultiFrame.prototype.text = function () {
-    console.log(new Error().stack);
-    throw "MultiFrame.text";
-  };
-
-  MultiFrame.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
-
-  MultiFrame.prototype.findMaxY = function () {
-    if (this.bottom) return this.bottom;
-    var maxY = this.top;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
-
-  MultiFrame.prototype.layout = function (y) {
-    var deferred = [];
-    this.top = mark(objs[this.min], objs[this.max], y);
-    y = this.top + 1;
-    for (var i = 0; i < this.nodes.length; i++) {
-      y = this.nodes[i].layout(y);
-    }
-    this.bottom = mark(objs[this.min], objs[this.max], y);
-    var splits = [];
-    for (var i = 0; i < this.nodes.length; i++) {
-      splits.push({ text: this.nodes[i].params, top: this.nodes[i].top });
-    }
-
-    objs[this.min].addLeftFrame(this);
-    objs[this.max].addRightFrame(this);
-
-    this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max, splits: splits };
-    return this.bottom;
-  };
-
-  function MultiFramePart(parent, call) {
-    this.parent = parent;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.frames = this.parent.frames;
-    this.inFrame = this.parent.inFrame;
-    this.labels = this.parent.labels;
-    this.lines = this.parent.lines;
-    this.nodes = createNodes(this, call.subCalls);
-
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
-      } else {
-        break;
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
       }
+      return true;
     }
-
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-    this.level = -1;
-  };
-
-  MultiFramePart.prototype.text = function () {
-    return this.params === null ? "" : "[ " + this.params + " ]";
-  };
-
-  MultiFramePart.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
+    findMaxY() {
+      var maxY = this.bottom;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
     }
-    return true;
+    layout(y) {
+      var deferred = [];
+      this.top = mark(this.parent, this, y);
+      this.error = (countInvocationsAt(this.objIndex, this.top) > 0); // || objs[this.objIndex].alive===false);
+      invocations.push(this);
+      objs[this.objIndex].addInvocation(this);
+      line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
+      y = this.top + 1;
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
+      }
+      this.bottom = mark(this, this, y);
+      if (!this.error) {
+        this.cross = mark(this, this, this.bottom);
+        objs[this.objIndex].addLifeEvent({ event: OBJ_DESTROYED, y: this.cross });
+      }
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+      if (this.error) {
+        line("", this, this.parent, this.bottom, RETURN);
+      } else {
+        objs[this.objIndex].alive = false;
+      }
+      return (this.error ? this.bottom : this.cross); // y = lo + 1
+    }
   };
 
-  MultiFramePart.prototype.layout = function (y) {
-    var lineAt = -1;
-    if (str(this.params)) {
-      this.top = mark2(objs[this.min], objs[this.max], y);
-      lineAt = this.top + 1;
-      y = this.top + 2;
-    } else {
+
+
+
+
+  class MultiFrame {
+    constructor(parent, parts) {
+      this.parent = parent;
+      this.parent.frames.push(this);
+      this.frames = [];
+      this.inFrame = true;
+      this.labels = [];
+      this.lines = [];
+      this.name = parts[0].name;
+      this.objIndex = parent.objIndex;
+      this.nodes = [];
+      for (var i = 0; i < parts.length; i++) {
+        this.nodes.push(new MultiFramePart(this, parts[i]));
+      }
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+      for (var i = 0; i < this.nodes.length; i++) {
+        this.nodes[i].min = this.min;
+        this.nodes[i].max = this.max;
+      }
+      this.level = -1;
+    }
+    text() {
+      console.log(new Error().stack);
+      throw "MultiFrame.text";
+    }
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    findMaxY() {
+      if (this.bottom) return this.bottom;
+      var maxY = this.top;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    layout(y) {
+      var deferred = [];
       this.top = mark(objs[this.min], objs[this.max], y);
       y = this.top + 1;
-    }
-    var deferred = [];
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-
-    if (lineAt > 0) {
-      if (this.min == this.max) {
-        objs[this.objIndex].addSelfMessage(this);
+      for (var i = 0; i < this.nodes.length; i++) {
+        y = this.nodes[i].layout(y);
       }
-      line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, lineAt, HIDDEN);
+      this.bottom = mark(objs[this.min], objs[this.max], y);
+      var splits = [];
+      for (var i = 0; i < this.nodes.length; i++) {
+        splits.push({ text: this.nodes[i].params, top: this.nodes[i].top });
+      }
+
+      objs[this.min].addLeftFrame(this);
+      objs[this.max].addRightFrame(this);
+
+      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max, splits: splits };
+      return this.bottom;
     }
-
-    //this.bottom = mark(objs[this.min],objs[this.max],this.findMaxY());
-    this.bottom = this.findMaxY();
-
-    layoutLater(this, this.bottom + 1);
-    return this.bottom;
   };
 
-  MultiFramePart.prototype.findMaxY = function () {
-    if (this.bottom) return this.bottom;
-    var maxY = this.top;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
+
+
+
+
+  class MultiFramePart {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+      this.nodes = createNodes(this, call.subCalls);
+
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+      this.level = -1;
     }
-    return maxY;
-  };
-
-  function Frame(parent, call) {
-    this.parent = parent;
-    this.parent.frames.push(this);
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.frames = [];
-    this.inFrame = true;
-    this.labels = [];
-    this.lines = [];
-    this.nodes = createNodes(this, call.subCalls);
-
-    this.later = [];
-    while (this.nodes.length > 0) {
-      var last = this.nodes[this.nodes.length - 1];
-      if (last instanceof SelfMessage
-        && last.name == "later"
-        && last.params == null
-        && last.nodes.length > 0) {
-        this.nodes.length--;
-        last.islater = true;
-        this.later.unshift(last);
-        this.returns = last.params;
+    text() {
+      return this.params === null ? "" : "[ " + this.params + " ]";
+    }
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    layout(y) {
+      var lineAt = -1;
+      if (str(this.params)) {
+        this.top = mark2(objs[this.min], objs[this.max], y);
+        lineAt = this.top + 1;
+        y = this.top + 2;
       } else {
-        break;
+        this.top = mark(objs[this.min], objs[this.max], y);
+        y = this.top + 1;
       }
-    }
-
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-    this.level = -1;
-  };
-
-  Frame.prototype.text = function () {
-    return this.params === null ? "" : "[ " + this.params + " ]";
-  };
-
-  Frame.prototype.check = function () {
-    for (var i = 0; i < this.nodes.length; i++) {
-      if (!this.nodes[i].check()) return false;
-    }
-    return true;
-  };
-
-  Frame.prototype.findMaxY = function () {
-    if (this.bottom) return this.bottom;
-    var maxY = this.top;
-    for (var i = 0; i < this.nodes.length; i++) {
-      maxY = Math.max(maxY, this.nodes[i].findMaxY());
-    }
-    return maxY;
-  };
-
-  Frame.prototype.layout = function (y) {
-    var deferred = [];
-    var lineAt = -1;
-
-    if (!str(this.params)) {
-      this.top = mark2(objs[this.min], objs[this.max], y);
-      y = this.top + 2;
-    } else {
-      this.top = mark3(objs[this.min], objs[this.max], y);
-      lineAt = this.top + 2;
-      y = this.top + 3;
-    }
-    for (var i = 0; i < this.nodes.length; i++) {
-      var lo = this.nodes[i].layout(y);
-      if (typeof (lo) == "object") {
-        deferred.push(lo);
-        y = this.nodes[i].top;
-      } else y = lo;
-    }
-    for (var i = 0; i < deferred.length; i++) {
-      deferred[i].deferredLayout();
-    }
-
-    this.bottom = mark(objs[this.min], objs[this.max], this.findMaxY());
-
-    if (lineAt > 0) {
-      if (this.min == this.max) {
-        objs[this.objIndex].addSelfMessage(this);
+      var deferred = [];
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
       }
-      line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, lineAt, HIDDEN);
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+
+      if (lineAt > 0) {
+        if (this.min == this.max) {
+          objs[this.objIndex].addSelfMessage(this);
+        }
+        line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, lineAt, HIDDEN);
+      }
+
+      //this.bottom = mark(objs[this.min],objs[this.max],this.findMaxY());
+      this.bottom = this.findMaxY();
+
+      layoutLater(this, this.bottom + 1);
+      return this.bottom;
     }
-
-    layoutLater(this, this.bottom + 1);
-
-    objs[this.min].addLeftFrame(this);
-    objs[this.max].addRightFrame(this);
-
-    this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max };
-    return this.bottom;
+    findMaxY() {
+      if (this.bottom) return this.bottom;
+      var maxY = this.top;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
   };
 
 
 
-  function RefLabel(parent, call) {
-    this.parent = parent;
-    this.parent.labels.push(this);
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    this.min = this.objIndex;
-    this.max = this.objIndex;
-    this.level = -1;
+
+
+  class Frame {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.parent.frames.push(this);
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.frames = [];
+      this.inFrame = true;
+      this.labels = [];
+      this.lines = [];
+      this.nodes = createNodes(this, call.subCalls);
+
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params == null
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+      this.level = -1;
+    }
+    text() {
+      return this.params === null ? "" : "[ " + this.params + " ]";
+    }
+    check() {
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    findMaxY() {
+      if (this.bottom) return this.bottom;
+      var maxY = this.top;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+    layout(y) {
+      var deferred = [];
+      var lineAt = -1;
+
+      if (!str(this.params)) {
+        this.top = mark2(objs[this.min], objs[this.max], y);
+        y = this.top + 2;
+      } else {
+        this.top = mark3(objs[this.min], objs[this.max], y);
+        lineAt = this.top + 2;
+        y = this.top + 3;
+      }
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else y = lo;
+      }
+      for (var i = 0; i < deferred.length; i++) {
+        deferred[i].deferredLayout();
+      }
+
+      this.bottom = mark(objs[this.min], objs[this.max], this.findMaxY());
+
+      if (lineAt > 0) {
+        if (this.min == this.max) {
+          objs[this.objIndex].addSelfMessage(this);
+        }
+        line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, lineAt, HIDDEN);
+      }
+
+      layoutLater(this, this.bottom + 1);
+
+      objs[this.min].addLeftFrame(this);
+      objs[this.max].addRightFrame(this);
+
+      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max };
+      return this.bottom;
+    }
   };
 
-  RefLabel.prototype.text = function () {
-    return this.params === null ? "" : "[ " + this.params + " ]";
+
+
+
+
+
+
+  class RefLabel {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.parent.labels.push(this);
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      this.min = this.objIndex;
+      this.max = this.objIndex;
+      this.level = -1;
+    }
+    text() {
+      return this.params === null ? "" : "[ " + this.params + " ]";
+    }
+    check() {
+      return true;
+    }
+    findMaxY() {
+      if (this.bottom) return this.bottom;
+    }
+    layout(y) {
+
+      this.top = mark4(objs[this.objIndex], objs[this.objIndex], y);
+      this.bottom = this.top + 3;
+      y = this.bottom + 1;
+      objs[this.min].addLabel(this);
+      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
+      return this.bottom;
+    }
   };
 
-  RefLabel.prototype.check = function () {
-    return true;
+
+
+
+
+
+  class Label {
+    constructor(parent, call) {
+      this.parent = parent;
+      this.parent.labels.push(this);
+      this.name = call.name;
+      this.params = call.params;
+      this.objIndex = call.objIndex;
+      objs[this.objIndex].alive = true;
+      this.nodes = [];
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+      this.level = parent.level;
+    }
+    text() {
+      return this.name + (this.params === null ? "" : "( " + this.params + " )");
+    }
+    check() {
+      return true;
+    }
+    layout(y) {
+      var left = { objIndex: this.objIndex };
+      //		if (this.objIndex>0) left.objIndex--;
+      var right = { objIndex: this.objIndex };
+      //		if (objs.length>this.objIndex+1) right.objIndex++;
+      this.top = mark(left, right, y);
+        /*if (this.name=="ref") y = mark(left,right,this.top);
+        else */ y = this.top;
+      this.bottom = mark(left, right, y);
+      this.layoutInfo = { name: this.name, text: this.params, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
+
+      objs[this.objIndex].addLabel(this);
+
+      return this.bottom;
+    }
+    findMaxY() {
+      return this.bottom;
+    }
   };
 
-  RefLabel.prototype.findMaxY = function () {
-    if (this.bottom) return this.bottom;
-  };
-
-  RefLabel.prototype.layout = function (y) {
-
-    this.top = mark4(objs[this.objIndex], objs[this.objIndex], y);
-    this.bottom = this.top + 3;
-    y = this.bottom + 1;
-    objs[this.min].addLabel(this);
-    this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
-    return this.bottom;
-  };
 
 
-  function Label(parent, call) {
-    this.parent = parent;
-    this.parent.labels.push(this);
-    this.name = call.name;
-    this.params = call.params;
-    this.objIndex = call.objIndex;
-    objs[this.objIndex].alive = true;
-    this.nodes = [];
-    var mm = minmax(this);
-    this.min = mm.min;
-    this.max = mm.max;
-    this.level = parent.level;
-  };
 
-  Label.prototype.text = function () {
-    return this.name + (this.params === null ? "" : "( " + this.params + " )");
-  };
-
-  Label.prototype.check = function () {
-    return true;
-  };
-
-  Label.prototype.layout = function (y) {
-    var left = { objIndex: this.objIndex };
-    //		if (this.objIndex>0) left.objIndex--;
-    var right = { objIndex: this.objIndex };
-    //		if (objs.length>this.objIndex+1) right.objIndex++;
-
-    this.top = mark(left, right, y);
-		/*if (this.name=="ref") y = mark(left,right,this.top);
-		else */y = this.top;
-    this.bottom = mark(left, right, y);
-    this.layoutInfo = { name: this.name, text: this.params, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
-
-    objs[this.objIndex].addLabel(this);
-
-    return this.bottom;
-  };
-
-  Label.prototype.findMaxY = function () {
-    return this.bottom;
-  };
 
   function createNodes(parent, subCalls) {
     var nodes = [];
@@ -2131,7 +2140,7 @@ console.log(f)
 
 
   if (_objs.length == 0) {
-    _objs.push(new ckwnc.Obj("", "actor"));
+    _objs.push(new Obj("", "actor"));
   }
 
   var diagramFrame = null;
@@ -2171,7 +2180,7 @@ console.log(f)
     //drawYs()
 
     if (diagramFrame != null) g.drawDiagramFrame(diagramFrame);
-    g.link("http://seqcode.app","seqcode.app", dim.w - 5, dim.h - 2,ALIGN_RIGHT);
+    g.link("http://seqcode.app","seqcode", dim.w - 5, dim.h - 2,ALIGN_RIGHT);
   } catch (e) {
     console.log(e);
   }

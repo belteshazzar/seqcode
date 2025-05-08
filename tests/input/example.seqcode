@@ -39,9 +39,11 @@ getCoffee( strong ) {
 
   # invariant labels also supported
   state(caffeinated)
+
+  invariant(drunk)
 }
 
 # notes are of the form note(x,y,width,message)
-note(450,50,300,welcome to ckwnc!)
+note(450,50,300,welcome to seqcode.app!)
 note(450,100,300,uml sequence diagrams automatically created from simple code)
 

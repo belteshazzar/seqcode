@@ -2,22 +2,15 @@
  * All Rights Reserved.
  */
 
-
 export const ALIGN_LEFT = "start";
 export const ALIGN_CENTER = "middle";
 export const ALIGN_RIGHT = "end";
-
 
 export class Graphics {
 
   constructor(_config) {
     this.config = _config;
-    this.canvas = _config.canvas;
     this.svg = _config.svg;
-    this.context = this.canvas.getContext('2d');
-    this.context.font = this.config.fontWeight + " " + this.config.fontSize + "pt " + this.config.fontFace;
-    this.context.strokeStyle = this.config.foreground;
-    this.context.fillStyle = this.config.foreground;
     this.textAnchor = "start";
   }
 
@@ -42,41 +35,8 @@ export class Graphics {
   };
 
   setSize(w, h) {
-    /*
-      if (window.devicePixelRatio)
-      {
-        console.log("---------"+window.devicePixelRatio);
-        this.canvas.width = w * window.devicePixelRatio;
-        this.canvas.height = h * window.devicePixelRatio;
-        this.canvas.style.width = w;
-        this.canvas.style.height = h;
-        this.context.scale(window.devicePixelRatio, window.devicePixelRatio);					
-      }
-      else
-      {
-    */
-    this.canvas.width = w;
-    this.canvas.height = h;
-    //	}
-
-    // this.div.style.width = w + 'px';
-    // this.div.style.height = h + 'px';
-
-    this.context.translate(0.5, 0.5);
-
-    this.context.font = this.config.fontWeight + " " + this.config.fontSize + "pt " + this.config.fontFace;
-    this.context.strokeStyle = this.config.foreground;
-    this.context.fillStyle = this.config.background;
-    this.context.fillRect(0, 0, w, h);
-    this.context.fillStyle = this.config.foreground;
-
-    //	this.context.shadowColor = '#00a';
-    //	this.context.shadowBlur = 1;
-    //	this.context.shadowOffsetX = 0;
-    //	this.context.shadowOffsetY = 0;
-
     this.svg.size(w, h)
-    this.svg.viewbox(0,0,w,h)
+    this.svg.viewbox(0, 0, w, h)
     this.svg.rect(w, h)
       .fill(this.config.background)
       .stroke({ color: this.config.foreground, width: 1 });
@@ -88,15 +48,38 @@ export class Graphics {
     return txt.node.getBBox().width
   };
 
+  frameLabel(x, y, w, h, text) {
+    let g = this.svg.group()
+    
+    g.polygon([
+      [x, y], // top left
+      [x, y + h], // bottom left
+      [x + w - 10, y + h], // bottom right
+      [x + w, y + h - 10], // bottom right
+      [x + w, y] // top right
+    ])
+      .fill(this.config.background)
+      .stroke({ color: this.config.foreground, width: 1 });
+
+      if (text) {
+        g.plain(text)
+          .attr('x',x + w / 2)
+          .attr('y',y + h / 2)
+          .attr('dominant-baseline', 'middle')
+          .attr('text-anchor', 'middle')
+          .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+          .fill({ color: this.config.foreground })
+      }
+  }
+
   link(url, str, x, y, align) {
     const link = this.svg.link(url)
       .target('_blank')
-    //   .add(
     link.plain(str)
-        .attr('text-anchor', align)
-        .amove(x, y - (this.config.fontSize / 3))
-        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
-        .fill({ color: this.config.foreground })
+      .attr('text-anchor', align)
+      .amove(x, y - (this.config.fontSize / 3))
+      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+      .fill({ color: this.config.foreground })
   }
 
   text(str, x, y, align) {
@@ -107,22 +90,12 @@ export class Graphics {
       .attr('text-anchor', align)
       .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
       .fill({ color: this.config.foreground })
-      .amove(x,y - (this.config.fontSize / 3))
+      .amove(x, y - (this.config.fontSize / 3))
 
+    // const w = this.widthOf(str)
+    // this.svg.line(x, y, x + w, y)
+    //   .stroke({ color: 'red', width: 1 })
   };
-
-  // align(x) {
-  //   if (x == ALIGN_LEFT) {
-  //     this.context.textAlign = "left";
-  //     this.textAnchor = "start";
-  //   } else if (x == ALIGN_CENTER) {
-  //     this.context.textAlign = "center";
-  //     this.textAnchor = "middle";
-  //   } else if (x == ALIGN_RIGHT) {
-  //     this.context.textAlign = "right";
-  //     this.textAnchor = "end";
-  //   }
-  // };
 
   line(x1, y1, x2, y2) {
     this.svg.line(x1, y1, x2, y2).stroke({ color: this.config.foreground, width: 1 })
@@ -135,74 +108,80 @@ export class Graphics {
   };
 
   drawDiagramFrame(f) {
-
     var left = 1;
     var top = 1;
-
-    this.strokeRect(left, top, this.svg.width() - left*2, this.svg.height() - top*2);
-
     var width = this.widthOf(f.params)
     var bottom = this.rowSpacing();
 
-    var gradient = this.svg.gradient('linear', (add) => {
-      add.stop(0, this.config.gradLight)
-      add.stop(1, this.config.gradDark)
-    })
-
-    this.svg.polygon([
-        [left,top],
-        [left, bottom],
-        [left + width + 5, bottom],
-        [left + width + 15, bottom - 10],
-        [left + width + 15, top]
-      ])
-      .fill(gradient)//{ color: this.config.background })
-      .stroke({ color: this.config.foreground, width: 1 });
-
-    // g.context.save();
-    // var grd = g.context.createLinearGradient(left, top, left, bottom);
-    // grd.addColorStop(0, g.config.gradLight);
-    // grd.addColorStop(1, g.config.gradDark);
-    // g.context.fillStyle = grd;
-    // g.context.beginPath();
-    // g.context.moveTo(left, top);
-    // g.context.lineTo(left, bottom);
-    // g.context.lineTo(left + width + 5, bottom); // across
-    // g.context.lineTo(left + width + 15, bottom - 10); // angled corner
-    // g.context.lineTo(left + width + 15, top); // side
-    // g.context.fill();
-    // g.context.stroke();
-    // g.context.restore();
-
-    this.text(f.params, left + 5, bottom - this.config.fontSize,ALIGN_LEFT);
+    this.strokeRect(left, top, this.svg.width() - left * 2, this.svg.height() - top * 2);
+    this.frameLabel(left, top, width + 15, bottom - top)
+    this.text(f.params, left + 5, bottom - this.config.fontSize, ALIGN_LEFT);
   }
 
-
-  fillRect(x, y, w, h) {
-    var gradient = this.svg.gradient('linear', (add) => {
-      add.stop(0, this.config.gradLight)
-      add.stop(1, this.config.gradDark)
-    })
+  strokeRect(x, y, w, h, color) {
     this.svg.rect(w, h)
       .move(x, y)
-      .fill(gradient)//{ color: this.config.background })
+      .fill('transparent')
+      .stroke({ color: color ? color : this.config.foreground, width: 1 });
+  }
+
+  fillRect(x, y, w, h, text) {
+    let g = this.svg.group()
+
+    g.rect(w, h)
+      .move(x,y)
+      .fill(this.config.background)
       .stroke({ color: this.config.foreground, width: 1 });
+
+    if (text) {
+      g.plain(text)
+        .attr('x',x + w / 2)
+        .attr('y',y + h / 2)
+        .attr('dominant-baseline', 'middle')
+        .attr('text-anchor', 'middle')
+        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+        .fill({ color: this.config.foreground })
+    }
   };
 
-  roundRect(x, y, width, height, radius) {
-    this.svg.rect(width, height)
+  roundRect(x, y, w, h, r, t) {
+    let g = this.svg.group()
+
+    g.rect(w, h)
       .move(x, y)
-      .radius(radius)
-      .fill({ color: this.config.background })
+      .radius(r)
+      .fill(this.config.background)
       .stroke({ color: this.config.foreground, width: 1 });
+
+    if (t) {
+      g.plain(t)
+        .attr('x',x + w / 2)
+        .attr('y',y + h / 2)
+        .attr('dominant-baseline', 'middle')
+        .attr('text-anchor', 'middle')
+        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+        .fill({ color: this.config.foreground })
+    }
   };
 
-  transparentRect(x, y, width, height) {
-    console.log("transparentRect", x, y, width, height);
-    this.svg.rect(width, height)
+  transparentRect(x, y, w, h,t) {
+    let g = this.svg.group()
+
+    g.rect(w, h)
       .move(x, y)
-      .radius(radius)
+      // .radius(radius)
       .fill({ color: 'rgba(255,255,255,0.8)' })
+
+    if (t) {
+      g.plain(t)
+        .attr('x',x + w / 2)
+        .attr('y',y + h / 2)
+        .attr('dominant-baseline', 'middle')
+        .attr('text-anchor', 'middle')
+        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+        .fill({ color: this.config.foreground })
+    }
+
   };
 
   layoutNote(x, y, w, txt) {
@@ -221,13 +200,13 @@ export class Graphics {
       for (var i = 1; i < wa.length; i++) {
         var word = wa[i].trim();
         if (word == "") continue;
-        measure = this.context.measureText(lastPhrase + splitChar + word).width;
+        measure = this.widthOf(lastPhrase + splitChar + word);
         if (measure < w - 2 * pad) {
           lastPhrase += (splitChar + word);
         } else {
           phraseArray.push(lastPhrase);
           lastPhrase = word;
-          measure = this.context.measureText(lastPhrase).width;
+          measure = this.widthOf(lastPhrase);
           if (measure > w - 2 * pad) {
             w = measure + 2 * pad;
             return false;
@@ -253,22 +232,15 @@ export class Graphics {
     var lineSpacing = 1.7;
 
     this.svg.rect(info.w, info.h)
-    .move(info.x, info.y)
-    .fill('rgba(255,255,204,0.8)')
-    .stroke({ color: '#dddddd', width: 1 });
+      .move(info.x, info.y)
+      .fill(this.config.noteBackground)
+      .stroke({ color: this.config.noteStroke, width: 1 });
 
     for (var i = 0; i < info.lines.length; i++) {
       this.text(info.lines[i],
         info.x + pad,
-        info.y + pad + this.config.fontSize * lineSpacing * (i + 1),ALIGN_LEFT);
+        info.y + pad + this.config.fontSize * lineSpacing * (i + 1), ALIGN_LEFT);
     }
-  }
-
-  strokeRect(x, y, w, h, color) {
-    this.svg.rect(w, h)
-    .move(x, y)
-    .fill('transparent')
-    .stroke({ color: color ? color : this.config.foreground, width: 1 });
   }
 
   rightArrow(x, y) {
@@ -309,152 +281,123 @@ export class Graphics {
 
   cross(x, y) {
     let g = this.svg.group()
-    g.line(x - this.config.arrowSize, y - this.config.arrowSize,x + this.config.arrowSize, y + this.config.arrowSize)
+    g.line(x - this.config.arrowSize, y - this.config.arrowSize, x + this.config.arrowSize, y + this.config.arrowSize)
       .stroke({ color: this.config.foreground, width: 1 })
-    g.line(x + this.config.arrowSize, y - this.config.arrowSize,x - this.config.arrowSize, y + this.config.arrowSize)
+    g.line(x + this.config.arrowSize, y - this.config.arrowSize, x - this.config.arrowSize, y + this.config.arrowSize)
       .stroke({ color: this.config.foreground, width: 1 })
   }
 
   boundary(x, y, size) {
-    this.context.save();
+    let g = this.svg.group()
+    g.transform({
+      translateX: x,
+      translateY: y
+    })
 
-    var grd = this.context.createLinearGradient(x - size / 2, y, x + size / 2, y);
-    grd.addColorStop(0, this.config.gradLight);
-    grd.addColorStop(1, this.config.gradDark);
-    this.context.fillStyle = grd;
+    g.circle(size)
+      .move(-size / 2, -size / 2)
+      .fill(this.config.background)
+      .stroke({ color: this.config.foreground, width: 1 });
+    var left = -Math.floor(size / 8 * 5);
+    g.line(left, - size / 2, left, + size / 2)
+      .stroke({ color: this.config.foreground, width: 1 });
+    g.line(left, 0, - size / 2, 0)
+      .stroke({ color: this.config.foreground, width: 1 });
 
-    this.context.beginPath();
-    this.context.arc(x, y, size / 2, 0, Math.PI * 2, true);
-    this.context.fill();
-
-    this.context.beginPath();
-    this.context.arc(x, y, size / 2, 0, Math.PI * 2, true);
-    var left = Math.floor(x - size / 8 * 5);
-    this.context.moveTo(left, y - size / 2);
-    this.context.lineTo(left, y + size / 2);
-    this.context.moveTo(left, y);
-    this.context.lineTo(x - size / 2, y);
-    this.context.stroke();
-
-    this.context.restore();
   };
 
   control(x, y, size) {
-    this.context.save();
 
-    var grd = this.context.createLinearGradient(x - size / 2, y, x + size / 2, y);
-    grd.addColorStop(0, this.config.gradLight);
-    grd.addColorStop(1, this.config.gradDark);
-    this.context.fillStyle = grd;
+    let g = this.svg.group()
+    g.transform({
+      translateX: x,
+      translateY: y
+    })
 
-    this.context.beginPath();
-    this.context.arc(x, y, size / 2, 0, Math.PI * 2, true);
-    this.context.fill();
+    g.circle(size)
+      .move(-size / 2, -size / 2)
+      .fill(this.config.background)
+      .stroke({ color: this.config.foreground, width: 1 });
 
-    this.context.beginPath();
-    this.context.arc(x, y, size / 2, 0, Math.PI * 2, true);
-    this.context.stroke();
-    this.context.translate(x, y - size / 2);
-    this.context.rotate(Math.PI / 8);
-    this.context.beginPath();
-    this.context.moveTo(size / 4, -size / 4);
-    this.context.lineTo(0, 0);
-    this.context.lineTo(size / 4, size / 4);
-    this.context.stroke();
+    let gg = g.group()
+    gg.transform({
+      translateY: -size / 2,
+      rotate: 45 / 2
+    })
+    gg.line(size / 4, -size / 4, 0, 0)
+      .stroke({ color: this.config.foreground, width: 1 });
+    gg.line(0, 0, size / 4, size / 4)
+      .stroke({ color: this.config.foreground, width: 1 });
 
-    this.context.restore();
   };
 
   entity(x, y, size) {
-    this.context.save();
 
-    var grd = this.context.createLinearGradient(x - size / 2, y, x + size / 2, y);
-    grd.addColorStop(0, this.config.gradLight);
-    grd.addColorStop(1, this.config.gradDark);
-    this.context.fillStyle = grd;
+    let g = this.svg.group()
+    g.transform({
+      translateX: x,
+      translateY: y
+    })
 
-    this.context.beginPath();
-    this.context.arc(x, y, size / 2, 0, Math.PI * 2, true);
-    this.context.fill();
+    g.circle(size)
+      .move(-size / 2, -size / 2)
+      .fill(this.config.background)
+      .stroke({ color: this.config.foreground, width: 1 });
+    g.line(-size / 2, size / 2, size / 2, size / 2)
+      .stroke({ color: this.config.foreground, width: 1 });
 
-    this.context.beginPath();
-    this.context.arc(x, y, size / 2, 0, Math.PI * 2, true);
-    this.context.moveTo(x - size / 2, y + size / 2);
-    this.context.lineTo(x + size / 2, y + size / 2);
-    this.context.stroke();
-
-    this.context.restore();
   };
 
   actor(x, y, size) {
-    this.context.save();
-
-    this.context.translate(x, y);
-    //	this.context.fillStyle="white";
-    //	this.context.fillRect(-size/6,-size/2,size/3,size);
-    this.context.beginPath();
-    // arms
-    this.context.moveTo(-size / 6, 0);
-    this.context.lineTo(size / 6, 0);
-    // body
-    this.context.moveTo(0, -size / 6);
-    this.context.lineTo(0, size / 6);
-    // legs
-    this.context.moveTo(-size / 6, size / 2); // left foot
-    this.context.lineTo(0, size / 6); // groin
-    this.context.lineTo(size / 6, size / 2); // right foot
-    this.context.stroke();
-
-    var grd = this.context.createLinearGradient(-size / 6, 0, size / 6, 0);
-    grd.addColorStop(0, this.config.gradLight);
-    grd.addColorStop(1, this.config.gradDark);
-    this.context.fillStyle = grd;
-
-    this.context.beginPath();
-    this.context.arc(0, -2 * size / 6, size / 6, 0, Math.PI * 2, true);
-    this.context.fill();
-    this.context.beginPath();
-    this.context.arc(0, -2 * size / 6, size / 6, 0, Math.PI * 2, true);
-    this.context.stroke();
-
-    this.context.restore();
-  }
-
-  circle(x, y, r) {
-
-    var gradient = this.svg.gradient('linear', (add) => {
-      add.stop(0, this.config.gradLight)
-      add.stop(1, this.config.gradDark)
+    let g = this.svg.group()
+    g.transform({
+      translateX: x,
+      translateY: y
     })
 
-    this.svg.circle(r * 2)
-      .move(x-r,y-r)
-      .fill(gradient)
+    g.circle(size / 3)
+      .move(-size / 6, -3 * size / 6)
+      .fill(this.config.background)
+      .stroke({ color: this.config.foreground, width: 1 });
+    g.line(-size / 6, 0, size / 6, 0)
+      .stroke({ color: this.config.foreground, width: 1 });
+    g.line(0, -size / 6, 0, size / 6)
+      .stroke({ color: this.config.foreground, width: 1 });
+    g.line(-size / 6, size / 2, 0, size / 6)
+      .stroke({ color: this.config.foreground, width: 1 });
+    g.line(0, size / 6, size / 6, size / 2)
       .stroke({ color: this.config.foreground, width: 1 });
   }
 
-  addDiv(txt, x, y, w, h) {
-    if (!this.config.refCallback) return;
+  circle(x, y, r) {
+    this.svg.circle(r * 2)
+      .move(x - r, y - r)
+      .fill(this.config.background)
+      .stroke({ color: this.config.foreground, width: 1 });
+  }
 
-    const div = document.createElement("div");
-    const config = this.config;
-    div.addEventListener('click', function () { config.refCallback(txt); });
-    div.style.position = 'absolute';
-    div.style.top = y + 'px';
-    div.style.left = x + 'px';
-    div.style.width = w + 'px';
-    div.style.height = h + 'px';
-    //	div.style.zIndex = 5;
-    div.style.cursor = 'pointer';
-    //	div.width = w;
-    //	div.height = h;
+  // addDiv(txt, x, y, w, h) {
+  //   if (!this.config.refCallback) return;
 
-    this.div.append(div);
-  };
+  //   const div = document.createElement("div");
+  //   const config = this.config;
+  //   div.addEventListener('click', function () { config.refCallback(txt); });
+  //   div.style.position = 'absolute';
+  //   div.style.top = y + 'px';
+  //   div.style.left = x + 'px';
+  //   div.style.width = w + 'px';
+  //   div.style.height = h + 'px';
+  //   //	div.style.zIndex = 5;
+  //   div.style.cursor = 'pointer';
+  //   //	div.width = w;
+  //   //	div.height = h;
 
-  getElement() {
-    if (this.config.refCallback) return this.div;
-    else return this.canvas;
-  };
+  //   this.div.append(div);
+  // };
+
+  // getElement() {
+  //   if (this.config.refCallback) return this.div;
+  //   else return this.canvas;
+  // };
 
 }

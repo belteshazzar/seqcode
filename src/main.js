@@ -1,29 +1,43 @@
 
+import { createSVGWindow } from 'svgdom';
+import { SVG, registerWindow } from '@svgdotjs/svg.js'
+
 import { tokenize } from './tokenize.js';
 import { parse } from './parse.js';
+import { graph } from './graph.js';
+import { Graphics } from './src/graphics.js';
 
-import graph from './graph.js';
+export default function (text,options) {
 
-export default function (text, cb) {
-  const g = new ckwnc.Graphics({
-    fontWeight: 100,
-    fontSize: 10,
-    fontFace: '"Century Gothic", CenturyGothic, AppleGothic, sans-serif',
+  const config = {
+    fontWeight: 200,
+    fontSize: 12,
+    fontFace: 'sans-serif',
     background: "white",
     foreground: "black",
+    noteBackground: 'rgba(255,255,204,0.8)',
+    noteStroke: '#eee',
     dashStyle: [8, 5],
-    gradLight: "#eee",
-    gradDark: "#ddd",
     arrowSize: 7,
     margin: 30,
-    rowSpacing: 40,
-    objectSpacing: 50,
+    rowSpacing: 25,
+    objectSpacing: 5,
     areaPadding: 15,
-    refCallback: cb
-  });
+  }
+
+  Object.assign(config, options);
 
   const toks = tokenize(text);
-  const p = parse(toks);
-  const graph = graph(p.objects, p.rootCall, g);
-  return g.getElement();
+  const ast = parse(toks);
+
+  const window = createSVGWindow();
+  const document = window.document;
+  registerWindow(window, document);
+  config.svg = SVG(document.documentElement)
+  const gfx = new Graphics(config);
+
+  graph(ast.objects, ast.rootCall, gfx);
+  config.svg.defs().plain(text).attr('id', 'seqcode')
+
+  return config.svg.svg()
 }
