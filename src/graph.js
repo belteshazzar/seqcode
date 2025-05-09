@@ -835,7 +835,7 @@ export function graph(_objs, rootCall, g) {
       h -= g.rowSpacing() / 2;
     }
     g.fillRect(x, yPx, w, h);
-    g.strokeRect(x, yPx, w, h);
+    // g.strokeRect(x, yPx, w, h);
   }
 
   //top==undefined means not layed out yet
