@@ -36,8 +36,9 @@ export default function (text,options) {
   Object.assign(config, options);
 
   const toks = tokenize(text);
-  const ast = parse(toks);
 
+  const ast = parse(toks);
+  if (ast.errors.length > 0) console.error(ast.errors)
   config.svg = SVG()
 
   if (!config.fill) {

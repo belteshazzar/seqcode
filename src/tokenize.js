@@ -168,5 +168,9 @@ export function tokenize(text) {
 
   }
 
+  if (token != null) {
+    tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+  }
+
   return tokens;
 }
