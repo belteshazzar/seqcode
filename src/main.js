@@ -1,11 +1,10 @@
 
-import { createSVGWindow } from 'svgdom';
-import { SVG, registerWindow } from '@svgdotjs/svg.js'
+import { SVG } from '@svgdotjs/svg.js'
 
 import { tokenize } from './tokenize.js';
 import { parse } from './parse.js';
 import { graph } from './graph.js';
-import { Graphics } from './src/graphics.js';
+import { Graphics } from './graphics.js';
 
 export default function (text,options) {
 
@@ -13,16 +12,25 @@ export default function (text,options) {
     fontWeight: 200,
     fontSize: 12,
     fontFace: 'sans-serif',
-    background: "white",
     foreground: "black",
+    background: 'white',
     noteBackground: 'rgba(255,255,204,0.8)',
     noteStroke: '#eee',
+//    fill: '#eee',
+    fillLignt: '#ffffff',
+    fillDark: '#f1f2f6',
+    linkColor: '#00f',
     dashStyle: [8, 5],
     arrowSize: 7,
     margin: 30,
     rowSpacing: 25,
     objectSpacing: 5,
     areaPadding: 15,
+    linkHandler: {
+      href: (link) => '#',
+      target: (link) => '',
+      onclick: (link) => `alert(decodeURIComponent("${encodeURIComponent(link)}"))`
+    },
   }
 
   Object.assign(config, options);
@@ -30,10 +38,15 @@ export default function (text,options) {
   const toks = tokenize(text);
   const ast = parse(toks);
 
-  const window = createSVGWindow();
-  const document = window.document;
-  registerWindow(window, document);
-  config.svg = SVG(document.documentElement)
+  config.svg = SVG()
+
+  if (!config.fill) {
+    config.fill = config.svg.gradient('linear', (add) => {
+      add.stop(0, config.fillLignt)
+      add.stop(1, config.fillDark)
+    })
+  }
+
   const gfx = new Graphics(config);
 
   graph(ast.objects, ast.rootCall, gfx);

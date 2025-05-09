@@ -58,7 +58,7 @@ export class Graphics {
       [x + w, y + h - 10], // bottom right
       [x + w, y] // top right
     ])
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
 
       if (text) {
@@ -79,14 +79,14 @@ export class Graphics {
       .attr('text-anchor', align)
       .amove(x, y - (this.config.fontSize / 3))
       .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
-      .fill({ color: this.config.foreground })
+      .fill({ color: this.config.linkColor })
   }
 
   text(str, x, y, align) {
     if (align !== ALIGN_LEFT && align != ALIGN_CENTER && align != ALIGN_RIGHT) {
       throw new Error("Invalid alignment: " + align);
     }
-    this.svg.plain(str)
+    return this.svg.plain(str)
       .attr('text-anchor', align)
       .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
       .fill({ color: this.config.foreground })
@@ -125,12 +125,20 @@ export class Graphics {
       .stroke({ color: color ? color : this.config.foreground, width: 1 });
   }
 
-  fillRect(x, y, w, h, text) {
-    let g = this.svg.group()
+  fillRect(x, y, w, h, text, link) {
+    let g;
+
+    if (link) {
+      g = this.svg.link(this.config.linkHandler.href(link))
+        .target(this.config.linkHandler.target(link))
+      g.attr('onclick', this.config.linkHandler.onclick(link))
+    } else {
+      g = this.svg.group()
+    }
 
     g.rect(w, h)
       .move(x,y)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
 
     if (text) {
@@ -140,7 +148,7 @@ export class Graphics {
         .attr('dominant-baseline', 'middle')
         .attr('text-anchor', 'middle')
         .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
-        .fill({ color: this.config.foreground })
+        .fill({ color: link ? this.config.linkColor : this.config.foreground })
     }
   };
 
@@ -150,7 +158,7 @@ export class Graphics {
     g.rect(w, h)
       .move(x, y)
       .radius(r)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
 
     if (t) {
@@ -184,12 +192,30 @@ export class Graphics {
 
   };
 
-  layoutNote(x, y, w, txt) {
+  textLink(txt) {
+    const regex = /(.*)\|\s*(\S+)$/g;
+    let match = regex.exec(txt);
+
+    if (match) {
+      return {
+        text: match[1].trim(),
+        link: match[2].trim()
+      }
+    } else {
+      return {
+        text: txt ? txt.trim() : null,
+        link: null
+      }
+    }
+  }
+
+  layoutNote(x, y, w, content) {
     var pad = 5;
     var lineSpacing = 1.7;
+    let {text,link} = this.textLink(content.trim())
 
     function getLines() {
-      var wa = txt.trim().split(" "),
+      var wa = text.trim().split(" "),
         phraseArray = [],
         lastPhrase = wa[0].trim(),
         measure = 0,
@@ -224,22 +250,48 @@ export class Graphics {
     var lines = getLines.call(this);
     while (lines === false) lines = getLines.call(this);
     var h = pad * 2 + lines.length * this.config.fontSize * lineSpacing;
-    return { x: x, y: y, w: w, h: h, lines: lines };
+    return { x: x, y: y, w: w, h: h, lines: lines, link: link };
   };
 
   drawNote(info) {
     var pad = 5;
     var lineSpacing = 1.7;
 
-    this.svg.rect(info.w, info.h)
-      .move(info.x, info.y)
+    let g;
+
+    if (info.link) {
+      g = this.svg.link(this.config.linkHandler.href(info.link))
+        .target(this.config.linkHandler.target(info.link))
+      g.attr('onclick', this.config.linkHandler.onclick(info.link))
+    } else {
+      g = this.svg.group()
+    }
+
+    let {x, y, w, h} = info
+
+    g.polygon([
+        [x,y],
+        [x,y + h],
+        [x + w, y + h],
+        [x + w, y + 10],
+        [x + w - 10, y ],
+     ])
+      .fill(this.config.noteBackground)
+      .stroke({ color: this.config.noteStroke, width: 1 });
+    g.polygon([
+        [x + w, y + 10],
+        [x + w - 10, y ],
+        [x + w - 10, y + 10],
+     ])
       .fill(this.config.noteBackground)
       .stroke({ color: this.config.noteStroke, width: 1 });
 
     for (var i = 0; i < info.lines.length; i++) {
       this.text(info.lines[i],
         info.x + pad,
-        info.y + pad + this.config.fontSize * lineSpacing * (i + 1), ALIGN_LEFT);
+        info.y + pad + this.config.fontSize * lineSpacing * (i + 1), ALIGN_LEFT)
+        .fill(info.link ? this.config.linkColor : this.config.foreground)
+        .addTo(g)
     }
   }
 
@@ -296,7 +348,7 @@ export class Graphics {
 
     g.circle(size)
       .move(-size / 2, -size / 2)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
     var left = -Math.floor(size / 8 * 5);
     g.line(left, - size / 2, left, + size / 2)
@@ -316,7 +368,7 @@ export class Graphics {
 
     g.circle(size)
       .move(-size / 2, -size / 2)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
 
     let gg = g.group()
@@ -341,7 +393,7 @@ export class Graphics {
 
     g.circle(size)
       .move(-size / 2, -size / 2)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
     g.line(-size / 2, size / 2, size / 2, size / 2)
       .stroke({ color: this.config.foreground, width: 1 });
@@ -357,7 +409,7 @@ export class Graphics {
 
     g.circle(size / 3)
       .move(-size / 6, -3 * size / 6)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
     g.line(-size / 6, 0, size / 6, 0)
       .stroke({ color: this.config.foreground, width: 1 });
@@ -372,7 +424,7 @@ export class Graphics {
   circle(x, y, r) {
     this.svg.circle(r * 2)
       .move(x - r, y - r)
-      .fill(this.config.background)
+      .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
   }
 

@@ -1,7 +1,13 @@
 
 import fs from 'node:fs'
 import { describe, expect, test } from 'vitest'
+import { createSVGWindow } from 'svgdom';
+import { registerWindow } from '@svgdotjs/svg.js'
 import seqcode from './src/main.js';
+
+const window = createSVGWindow();
+const document = window.document;
+registerWindow(window, document);
 
 describe.each(
   fs.readdirSync('./tests/input').map(file => file.replace('.seqcode', ''))

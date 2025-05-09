@@ -569,10 +569,12 @@ export function graph(_objs, rootCall, g) {
     let right;
     let top;
     let bottom;
+    let link = null
 
     if (r.name) {
       // called from drawing a label
       text = r.params;
+      link = r.link
       left = r.left;
       right = r.right;
       top = r.top;
@@ -580,13 +582,12 @@ export function graph(_objs, rootCall, g) {
     } else {
       // called from drawing a line
       text = r.text;
+      link = r.link
       left = Math.min(r.from.objIndex, r.to.objIndex);
       right = Math.max(r.from.objIndex, r.to.objIndex);
       top = r.y;
       bottom = top + 3;
     }
-
-
 
     const rlevel = objs[right].maxInvocationDepth(top, bottom);
 
@@ -596,7 +597,7 @@ export function graph(_objs, rootCall, g) {
     const c = left == right ? objs[left].x : objs[left].x + w2 - 20; // TODO: not quite right!
     const xl = c - w2;
 
-    g.fillRect(xl, y(top), w, y(bottom) - y(top),text);
+    g.fillRect(xl, y(top), w, y(bottom) - y(top),text,link);
 //    g.strokeRect(xl, y(top), w, y(bottom) - y(top));
 
 //    g.addDiv(text, xl, y(top), w, y(bottom) - y(top));
@@ -1065,6 +1066,15 @@ export function graph(_objs, rootCall, g) {
       this.parent = parent;
       this.name = call.name;
       this.params = call.params;
+      this.link = null;
+      if (this.params) {
+        let tl = g.textLink(this.params)
+
+        if (tl) {
+          this.params = tl.text
+          this.link = tl.link
+        }
+      }
       this.objIndex = call.objIndex;
       objs[this.objIndex].alive = true;
       this.min = Math.min(this.objIndex, parent.objIndex);
@@ -1088,7 +1098,7 @@ export function graph(_objs, rootCall, g) {
       objs[this.min].addLabel(fakeLabel);
       objs[this.max].addLabel(fakeLabel);
       line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, this.top, REF);
-      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max, x: this.objIndex };
+      this.layoutInfo = { name: this.name, params: this.params, link: this.link, top: this.top, bottom: this.bottom, left: this.min, right: this.max, x: this.objIndex };
       return this.bottom;
     }
   };
@@ -1986,6 +1996,17 @@ export function graph(_objs, rootCall, g) {
       this.parent.labels.push(this);
       this.name = call.name;
       this.params = call.params;
+      this.params = call.params;
+      this.link = null;
+      if (this.params) {
+        let tl = g.textLink(this.params)
+
+        if (tl) {
+          this.params = tl.text
+          this.link = tl.link
+        }
+      }
+
       this.objIndex = call.objIndex;
       this.min = this.objIndex;
       this.max = this.objIndex;
@@ -2006,7 +2027,7 @@ export function graph(_objs, rootCall, g) {
       this.bottom = this.top + 3;
       y = this.bottom + 1;
       objs[this.min].addLabel(this);
-      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
+      this.layoutInfo = { name: this.name, params: this.params, link: this.link, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
       return this.bottom;
     }
   };
