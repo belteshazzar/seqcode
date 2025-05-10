@@ -1,5 +1,7 @@
+
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
   build: {
@@ -12,6 +14,18 @@ export default defineConfig({
     rollupOptions: {
       // Externalize dependencies that shouldn't be bundled
       external: [], // Add external dependencies if any
+      output: {
+      }
     },
   },
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: './tests/input/example.seqcode',
+          dest: './',
+        },
+      ],
+    }),
+  ]
 });

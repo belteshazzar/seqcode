@@ -592,7 +592,7 @@ export function graph(_objs, rootCall, g) {
     const rlevel = objs[right].maxInvocationDepth(top, bottom);
 
     const tw = g.widthOf("ref");
-    const w2 = Math.max(25, left == right ? Math.ceil(g.widthOf(" " + text + " ") / 2) : Math.ceil((objs[right].x - objs[left].x + rlevel * 10 + 30) / 2));
+    const w2 = Math.max(25, left == right ? Math.ceil(g.widthOf("-" + text + "-") / 2) : Math.ceil((objs[right].x - objs[left].x + rlevel * 10 + 30) / 2));
     const w = w2 * 2;
     const c = left == right ? objs[left].x : objs[left].x + w2 - 20; // TODO: not quite right!
     const xl = c - w2;
