@@ -1,0 +1,23 @@
+
+a: actor
+b: boundary
+
+# send
+b>do() {
+  # can't return when sending
+  return(result)
+}
+
+# self call
+a.do() {
+  # call
+  b.do() {
+    return(not aligned nicely)
+  }
+  return(this is not spacing correctly)
+}
+
+# self send
+a>do() {
+  return(result)
+}
