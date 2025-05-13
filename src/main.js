@@ -9,7 +9,7 @@ import { Graphics } from './graphics.js';
 export default function (text,options) {
 
   const config = {
-    fontWeight: 200,
+    fontWeight: 100,
     fontSize: 12,
     fontFace: 'sans-serif',
     foreground: "black",
@@ -19,11 +19,11 @@ export default function (text,options) {
 //    fill: '#eee',
     fillLignt: '#ffffff',
     fillDark: '#f1f2f6',
-    linkColor: '#00f',
+    linkColor: "#4a91ed",
     dashStyle: [8, 5],
     arrowSize: 7,
     margin: 30,
-    rowSpacing: 25,
+    rowSpacing: 30,
     objectSpacing: 5,
     areaPadding: 15,
     linkHandler: {

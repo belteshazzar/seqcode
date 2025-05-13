@@ -2191,6 +2191,7 @@ export function graph(_objs, rootCall, g) {
     // work out sizes
     //objs.push();
     const dim = layout();
+    dim.w = Math.max(dim.w, g.widthOf("seqcode--")*1.5)
     if (diagramFrame) {
       dim.w = Math.max(dim.w, g.widthOf(diagramFrame.params) + 30);
     }
@@ -2201,7 +2202,6 @@ export function graph(_objs, rootCall, g) {
     //drawYs()
 
     if (diagramFrame != null) g.drawDiagramFrame(diagramFrame);
-    g.link("http://seqcode.app","seqcode", dim.w - 5, dim.h - 2,ALIGN_RIGHT);
   } catch (e) {
     console.log(e);
   }

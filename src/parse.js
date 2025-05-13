@@ -159,6 +159,18 @@ export function parse(tokens) {
             target = objects.length - 1;
           }
 
+          ///////
+          let result = null;
+          if (peek() != null && peek().str == ':') {
+            pop(); // remove ':'
+            if (peek() == null || peek().type != IDENT) {
+              errors.push(new ParseError(null, "expected return type", 12));
+            } else {
+              tok = pop();
+              result = tok.str;
+            }
+          }
+
           if (peek() != null && peek().type == BRACE_OPEN) {
             ///////////////////////////////////////////////////////////////////////
             //
@@ -168,7 +180,7 @@ export function parse(tokens) {
 
             pop(); // remove '{'
 
-            var subCall = new Call(target, name, params, asynch);
+            var subCall = new Call(target, name, params, asynch, result);
             doParse(subCall);
             call.subCalls.push(subCall);
 
@@ -191,7 +203,7 @@ export function parse(tokens) {
             //
             ///////////////////////////////////////////////////////////////////////
 
-            call.subCalls.push(new Call(target, name, params, asynch));
+            call.subCalls.push(new Call(target, name, params, asynch, result));
             continue;
           }
         }
@@ -217,6 +229,18 @@ export function parse(tokens) {
             continue;
           }
 
+          ///////
+          let result = null;
+          if (peek() != null && peek().str == ':') {
+            pop(); // remove ':'
+            if (peek() == null || peek().type != IDENT) {
+              errors.push(new ParseError(null, "expected return type", 12));
+            } else {
+              tok = pop();
+              result = tok.str;
+            }
+          }
+          
           ///////////////////////////////////////////////////////////////////////
           //
           // MSG TO SELF

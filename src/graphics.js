@@ -40,6 +40,23 @@ export class Graphics {
     this.svg.rect(w, h)
       .fill(this.config.background)
       .stroke({ color: this.config.foreground, width: 1 });
+
+    const link = this.svg.link("http://seqcode.app")
+      .target("_blank")
+    const text = link.plain("seqcode ") // space for size hack with font size
+      .attr('text-anchor', ALIGN_RIGHT)
+      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+      .fill({ color: this.config.linkColor })
+      .amove(w-this.config.fontSize*0.3,h-this.config.fontSize*0.3-3)
+
+    // const icon = link.path("M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1")
+    //   .fill(this.config.linkColor)
+    //   .size(this.config.fontSize,this.config.fontSize)
+    //   .x(w-this.config.fontSize*1.2)
+    //   .y(h-this.config.fontSize*1.2)
+
+
+      //link.transform({translate: [w-linkBox.width-5, h-linkBox.height+5]})
   };
 
   widthOf(str) {
@@ -73,15 +90,6 @@ export class Graphics {
       }
   }
 
-  link(url, str, x, y, align) {
-    const link = this.svg.link(url)
-      .target('_blank')
-    link.plain(str)
-      .attr('text-anchor', align)
-      .amove(x, y - (this.config.fontSize / 3))
-      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
-      .fill({ color: this.config.linkColor })
-  }
 
   text(str, x, y, align) {
     if (align !== ALIGN_LEFT && align != ALIGN_CENTER && align != ALIGN_RIGHT) {
@@ -149,7 +157,15 @@ export class Graphics {
         .attr('dominant-baseline', 'middle')
         .attr('text-anchor', 'middle')
         .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
-        .fill({ color: link ? this.config.linkColor : this.config.foreground })
+        .fill({ color: this.config.foreground })
+    }
+
+    if (link) {
+      g.path("M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1")
+        .fill(this.config.linkColor)
+        .x(x+w-this.config.fontSize-3)
+        .y(y+h-this.config.fontSize-3)
+        .size(this.config.fontSize,this.config.fontSize)
     }
   };
 
@@ -264,6 +280,8 @@ export class Graphics {
       g = this.svg.link(this.config.linkHandler.href(info.link))
         .target(this.config.linkHandler.target(info.link))
       g.attr('onclick', this.config.linkHandler.onclick(info.link))
+
+
     } else {
       g = this.svg.group()
     }
@@ -291,8 +309,15 @@ export class Graphics {
       this.text(info.lines[i],
         info.x + pad,
         info.y + pad + this.config.fontSize * lineSpacing * (i + 1), ALIGN_LEFT)
-        .fill(info.link ? this.config.linkColor : this.config.foreground)
         .addTo(g)
+        .fill(this.config.foreground)
+    }
+
+    if (info.link) {
+      g.path("M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1")
+        .fill(this.config.linkColor)
+        .move(info.x+info.w-this.config.fontSize-3,info.y+info.h-this.config.fontSize-3)
+        .size(this.config.fontSize,this.config.fontSize)
     }
   }
 

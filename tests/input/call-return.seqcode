@@ -1,0 +1,4 @@
+ident.call() : result
+
+call() : int
+
