@@ -234,7 +234,9 @@ export class Obj {
     this.selfMsgs.forEach(function (msg, indx) {
       if (indx < y1) return;
       if (indx > y2) return;
-      w = Math.max(w, msg.level * 10 + Math.max(30, g.widthOf(msg.text())) + obj.rightFrameSpace(indx));
+
+      // added width of return text
+      w = Math.max(w, msg.level * 10 + Math.max(30, Math.max(g.widthOf(msg.text()), msg.returns ? g.widthOf(msg.returns) : 0)) + obj.rightFrameSpace(indx));
     });
 
     this.lostMsgs.forEach(function (msg, indx) {

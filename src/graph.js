@@ -769,7 +769,8 @@ export function graph(_objs, rootCall, g) {
         }
         g.dashedLine(fromX, y(l.y), toX, y(l.y));
       }
-      g.text(l.text, fromX + (fromX < toX ? 3 : -3), y(l.y),l.from.objIndex < l.to.objIndex ? ALIGN_LEFT : ALIGN_RIGHT);
+      // for line right-left align text with left of right object
+      g.text(l.text, l.from.objIndex < l.to.objIndex ? fromX + 3 : objs[l.from.objIndex].x - WIDTH / 2 - 3, y(l.y),l.from.objIndex < l.to.objIndex ? ALIGN_LEFT : ALIGN_RIGHT);
       if (l.style[1]) {
         if (fromX < toX) g.solidRightArrow(toX, y(l.y));
         else g.solidLeftArrow(toX, y(l.y));
