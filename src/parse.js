@@ -6,7 +6,7 @@ import { Call } from './call.js';
 import { Obj } from './obj.js';
 import { ParseError } from './parse_error.js';
 
-import { CLASSIFIER, BRACE_OPEN, BRACE_CLOSE, BRACKET_OPEN, BRACKET_CLOSE, IDENT, CALL, SIGNAL } from './token.js';
+import { CLASSIFIER, BRACE_OPEN, BRACE_CLOSE, PARAMS, IDENT, CALL, SIGNAL } from './token.js';
 
 export function parse(tokens) {
   var at = 0;
@@ -126,32 +126,15 @@ export function parse(tokens) {
           var name = tok.str;
           var params = null;
           if (peek() == null) {
-            errors.push(new ParseError(null, "'('", 8));
+            errors.push(new ParseError(null, "parameters", 8));
             return;
           }
-          tok = pop(); // (
-          if (tok.type != BRACKET_OPEN) {
-            errors.push(new ParseError(tok, "'('", 9));
+          tok = pop(); // params
+          if (tok.type != PARAMS) {
+            errors.push(new ParseError(tok, "expected parameters", 9));
             continue;
           }
-
-          tok = pop();  //) or params 
-          if (tok == null) {
-            errors.push(new ParseError(null, "parameters or ')'", 10));
-            return;
-          }
-          if (tok.type == IDENT) {
-            params = tok.str;
-            tok = pop();
-            if (tok == null) {
-              errors.push(new ParseError(null, "')'", 11));
-              return;
-            }
-          }
-          if (tok.type != BRACKET_CLOSE) {
-            errors.push(new ParseError(tok, "')'", 12));
-            continue;
-          }
+          params = tok.str;
 
           var target = indexOf(objName);
           if (target == -1) {
@@ -195,27 +178,9 @@ export function parse(tokens) {
             continue;
           }
         }
-        else if (tok.type == BRACKET_OPEN) {
+        else if (tok.type == PARAMS) {
           var name = ident.str;
-          var params = null;
-
-          tok = pop();  //) or params 
-          if (tok == null) {
-            errors.push(new ParseError(null, "parameters or ')'", 15));
-            return;
-          }
-          if (tok.type == IDENT) {
-            params = tok.str;
-            tok = pop();
-            if (tok == null) {
-              errors.push(new ParseError(null, ")", 16));
-              return;
-            }
-          }
-          if (tok.type != BRACKET_CLOSE) {
-            errors.push(new ParseError(tok, ')', 17));
-            continue;
-          }
+          var params = tok.str;
           
           ///////////////////////////////////////////////////////////////////////
           //

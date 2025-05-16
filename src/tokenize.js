@@ -5,8 +5,9 @@
 import {
   Token,
   IDENT,
+  PARAMS,
   BRACE_OPEN, BRACE_CLOSE,
-  BRACKET_OPEN, BRACKET_CLOSE,
+  // BRACKET_OPEN, BRACKET_CLOSE,
   CALL,
   SIGNAL,
   CLASSIFIER
@@ -29,8 +30,15 @@ export function tokenize(text) {
 
     if (ch == '\r') continue;
     if (ch == '\n') {
-      if (!inString && !inParams && token != null) {
-        tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+      if (/*!inString && !inParams && */token != null) {
+        if (inParams) {
+          tokens.push(new Token(tokenLine, tokenCol, PARAMS, token));
+          inParams = false
+        } else {
+          // in string or identifier, either way emit ident 
+          inString = false
+          tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+        }
         token = null;
       }
       ln++
@@ -67,11 +75,6 @@ export function tokenize(text) {
 
     if (inParams) {
       if (escaped) {
-        if (token == null) {
-          token = "";
-          tokenLine = ln;
-          tokenCol = col;
-        }
         if (ch == ')') {
           token += ')';
           escaped = false;
@@ -83,33 +86,15 @@ export function tokenize(text) {
         }
       } else {
         if (ch == ')') {
-          if (token != null) {
-            token = token.trim();
-            if (token != "") {
-              tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
-            }
-            token = null;
-          }
-          tokens.push(new Token(ln, col, BRACKET_CLOSE, ')'));
+          tokens.push(new Token(tokenLine, tokenCol, PARAMS, token.trim()));
           inParams = false;
+          token = null
         } else if (ch == '\\') {
           escaped = true;
         } else {
-          if (token == null) {
-            token = "";
-            tokenLine = ln;
-            tokenCol = col;
-          }
           token += ch;
         }
       }
-    } else if (ch == '(') {
-      if (token != null) {
-        tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
-        token = null;
-      }
-      tokens.push(new Token(ln, col, BRACKET_OPEN, '('));
-      inParams = true;
     } else if (inString) {
       if (escaped) {
         if (ch == '"') {
@@ -132,19 +117,28 @@ export function tokenize(text) {
           token += ch;
         }
       }
+    } else if (ch == '(') {
+      if (token != null) {
+        tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+      }
+      inParams = true;
+      token = '';
+      tokenLine = ln;
+      tokenCol = col;
     } else if (ch == '"') {
+      if (token != null) {
+        tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+      }
       inString = true;
       token = '';
       tokenLine = ln;
       tokenCol = col;
-    }
-    else if (ch == ' ' || ch == '\t') {
+    } else if (ch == ' ' || ch == '\t') {
       if (token != null) {
         tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
         token = null;
       }
-    }
-    else if (ch == ':' || ch == '{' || ch == '}' || ch == '.' || ch == '>') {
+    } else if (ch == ':' || ch == '{' || ch == '}' || ch == '.' || ch == '>') {
       if (token != null) {
         tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
         token = null;
@@ -156,16 +150,13 @@ export function tokenize(text) {
       else if (ch == ".") t = CALL;
       else t = SIGNAL;
       tokens.push(new Token(ln, col, t, ch));
-    }
-    else if (token == null) {
+    } else if (token == null) {
       token = ch;
       tokenCol = col;
       tokenLine = ln;
-    }
-    else {
+    } else {
       token += ch;
     }
-
   }
 
   if (token != null) {

@@ -62,6 +62,7 @@ export class Graphics {
   widthOf(str) {
     const txt = this.svg.text(str).font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace });
     const w = txt.bbox().width
+    console.log(`widthOf(${str}) = ${w}`)
     txt.remove()
     return w
   };
