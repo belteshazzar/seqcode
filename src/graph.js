@@ -891,26 +891,29 @@ export function graph(_objs, rootCall, g) {
       this.params = call.params;
     }
     layout() {
-      var ss = this.params.split(",");
+      const parsed = Note.parseParams(this.params)
+      this.info = g.layoutNote(parsed.x, parsed.y, parsed.w, parsed.text);
+    }
+    draw() {
+      if (this.info) g.drawNote(this.info);
+    }
+
+    static parseParams(params) {
+      var ss = params.split(",");
       if (ss.length < 4) {
-        errors.push("note wrong number of params for note: " + this.params);
-        return;
+        return null;
       }
       var x = parseInt(ss[0]);
       var y = parseInt(ss[1]);
       var w = parseInt(ss[2]);
       if (isNaN(x) || x != ss[0] || isNaN(y) || y != ss[1] || isNaN(w) || w != ss[2]) {
-        errors.push("note position param not a number: " + this.params);
-        return;
+        return null;
       }
       ss.shift();
       ss.shift();
       ss.shift();
-      var txt = ss.join(",");
-      this.info = g.layoutNote(x, y, w, txt);
-    }
-    draw() {
-      if (this.info) g.drawNote(this.info);
+      var text = ss.join(",");
+      return {x,y,w,text}
     }
   };
 
@@ -2093,7 +2096,7 @@ export function graph(_objs, rootCall, g) {
 
         if (noChildren && name == "pause") {
           nodes.push(new Pause(parent));
-        } else if (noChildren && name == "note") {
+        } else if (noChildren && name == "note" && Note.parseParams(subCalls[i].params)) {
           notes.push(new Note(subCalls[i]));
         } else if (noChildren && name.charAt(0) == "-") {
           nodes.push(new LostMessage(parent, subCalls[i]));
