@@ -1,6 +1,6 @@
 {
   "name": "seqcode",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "BSD-2-Clause",
   "type": "module",
   "exports": {
@@ -20,11 +20,10 @@
     "path": "^0.12.7",
     "vite": "^6.3.5",
     "vite-plugin-static-copy": "^2.3.1",
-    "vitest": "^3.1.2"
+    "vitest": "^3.1.2",
+    "svgdom": "^0.1.21"
   },
   "dependencies": {
-    "@svgdotjs/svg.js": "^3.2.4",
-    "svgdom": "^0.1.21",
-    "url": "^0.11.4"
+    "@svgdotjs/svg.js": "^3.2.4"
   }
 }
