@@ -11,7 +11,7 @@ export default function (text,options) {
   const config = {
     fontWeight: 100,
     fontSize: 12,
-    fontFace: 'sans-serif',
+    fontFace: 'verdana',
     foreground: "black",
     background: 'white',
     noteBackground: 'rgba(255,255,204,0.8)',
@@ -19,7 +19,7 @@ export default function (text,options) {
 //    fill: '#eee',
     fillLignt: '#ffffff',
     fillDark: '#f1f2f6',
-    linkColor: "#4a91ed",
+    linkColor: "#999",
     dashStyle: [8, 5],
     arrowSize: 7,
     margin: 30,
