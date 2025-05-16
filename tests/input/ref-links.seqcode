@@ -1,0 +1,7 @@
+
+a:Class
+b:Class
+
+ref( txta | linka )
+
+b.ref( txtb | linkb )

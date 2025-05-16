@@ -493,8 +493,8 @@ export function graph(_objs, rootCall, g) {
   // invocation width
   var WIDTH = 20;
 
-  function line(text, from, to, y, style) {
-    const ln = { text: text, from: from, to: to, y: y, style: style };
+  function line(text, from, to, y, style, meta) {
+    const ln = { text: text, from: from, to: to, y: y, style: style, meta: meta };
     lines.push(ln);
     if (from.lines) from.lines.push(ln);
   }
@@ -582,7 +582,7 @@ export function graph(_objs, rootCall, g) {
     } else {
       // called from drawing a line
       text = r.text;
-      link = r.link
+      link = r.meta.link
       left = Math.min(r.from.objIndex, r.to.objIndex);
       right = Math.max(r.from.objIndex, r.to.objIndex);
       top = r.y;
@@ -1098,7 +1098,7 @@ export function graph(_objs, rootCall, g) {
       const fakeLabel = { top: this.top, bottom: this.bottom, params: "x" };
       objs[this.min].addLabel(fakeLabel);
       objs[this.max].addLabel(fakeLabel);
-      line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, this.top, REF);
+      line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, this.top, REF, { link : this.link });
       this.layoutInfo = { name: this.name, params: this.params, link: this.link, top: this.top, bottom: this.bottom, left: this.min, right: this.max, x: this.objIndex };
       return this.bottom;
     }
