@@ -280,13 +280,13 @@ export class Graphics {
       g = this.svg.link(this.config.linkHandler.href(info.link))
         .target(this.config.linkHandler.target(info.link))
       g.attr('onclick', this.config.linkHandler.onclick(info.link))
-
-
     } else {
       g = this.svg.group()
-    }
+    }    
 
     let {x, y, w, h} = info
+
+    g.attr('class','note')
 
     g.polygon([
         [x,y],
