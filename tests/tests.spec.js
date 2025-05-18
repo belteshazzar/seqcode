@@ -17,7 +17,8 @@ describe.each(
     const txt = fs.readFileSync(`./tests/input/${f}.seqcode`, 'utf8');
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
-    const svg = seqcode(txt, {fontFace: 'sans-serif'});
+    const {svg,errors} = seqcode(txt, {fontFace: 'sans-serif'});
+    if (errors) console.log(errors)
     fs.writeFileSync(`./tests/output/${f}.svg`, svg, { encoding: 'utf8' })
   })
 
@@ -27,7 +28,8 @@ describe('svg from string', () => {
   test('test1', () => {
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
-    const svg = seqcode("bob", {fontFace: 'sans-serif'});
+    const {svg,errors} = seqcode("bob", {fontFace: 'sans-serif'});
+    if (errors) console.log(errors)
     fs.writeFileSync(`./tests/output/test1.svg`, svg, { encoding: 'utf8' })
   })
 })

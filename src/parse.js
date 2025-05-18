@@ -179,8 +179,8 @@ export function parse(tokens) {
           }
         }
         else if (tok.type == PARAMS) {
-          var name = ident.str;
-          var params = tok.str;
+          // var name = ident.str;
+          // var params = tok.str;
           
           ///////////////////////////////////////////////////////////////////////
           //
@@ -190,7 +190,7 @@ export function parse(tokens) {
 
           if (peek() != null && peek().str == '{') {
             pop(); // remove '{'
-            var subCall = new Call(call.objIndex, name, params, false);
+            var subCall = new Call(call.objIndex, ident, tok, false);
             doParse(subCall);
             call.subCalls.push(subCall);
 
@@ -206,7 +206,7 @@ export function parse(tokens) {
             }
           }
           else {
-            call.subCalls.push(new Call(call.objIndex, name, params, false));
+            call.subCalls.push(new Call(call.objIndex, ident, tok, false));
           }
         }
         else {

@@ -38,7 +38,7 @@ export default function (text,options) {
   const toks = tokenize(text);
 
   const ast = parse(toks);
-  if (ast.errors.length > 0) console.error(ast.errors)
+
   config.svg = SVG()
 
   if (!config.fill) {
@@ -53,5 +53,8 @@ export default function (text,options) {
   graph(ast.objects, ast.rootCall, gfx);
   config.svg.defs().plain(text).attr('id', 'seqcode')
 
-  return config.svg.svg()
+  return {
+    svg: config.svg.svg(),
+    errors: ast.errors.length > 0 ? ast.errors : null
+  };
 }
