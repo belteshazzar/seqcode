@@ -330,14 +330,14 @@ export class Graphics {
         [x + w, y + 10],
         [x + w - 10, y ],
      ])
-      .fill(this.config.noteBackground)
+      .fill(this.config.noteFill)
       .stroke({ color: this.config.noteStroke, width: 1 });
     g.polygon([
         [x + w, y + 10],
         [x + w - 10, y ],
         [x + w - 10, y + 10],
      ])
-      .fill(this.config.noteBackground)
+      .fill(this.config.noteFill)
       .stroke({ color: this.config.noteStroke, width: 1 });
 
     for (var i = 0; i < info.lines.length; i++) {

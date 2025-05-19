@@ -14,11 +14,11 @@ export default function (text,options) {
     fontFace: 'verdana',
     foreground: "black",
     background: 'white',
-    noteBackground: 'rgba(255,255,204,0.8)',
-    noteStroke: '#eee',
+    noteFill: 'rgba(255,255,204,0.8)',
+    noteStroke: '#ccc',
 //    fill: '#eee',
-    fillLignt: '#ffffff',
-    fillDark: '#f1f2f6',
+    fillLight: '#eee',
+    fillDark: '#ddd',
     linkColor: "#999",
     dashStyle: [8, 5],
     arrowSize: 7,
@@ -43,7 +43,7 @@ export default function (text,options) {
 
   if (!config.fill) {
     config.fill = config.svg.gradient('linear', (add) => {
-      add.stop(0, config.fillLignt)
+      add.stop(0, config.fillLight)
       add.stop(1, config.fillDark)
     })
   }
