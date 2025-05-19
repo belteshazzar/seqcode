@@ -2195,12 +2195,21 @@ export function graph(_objs, rootCall, g) {
     // work out sizes
     //objs.push();
     const dim = layout();
+    const diagramWidth = dim.w
+
     dim.w = Math.max(dim.w, g.widthOf("seqcode--")*1.5)
     if (diagramFrame) {
       dim.w = Math.max(dim.w, g.widthOf(diagramFrame.params) + 30);
     }
-    g.setSize(dim.w, dim.h); // Math.max(maxNoteY,y(maxY+2)));
 
+    g.setSize(dim.w, dim.h); // Math.max(maxNoteY,y(maxY+2)));
+    const svgWidth = dim.w
+
+    if (svgWidth > diagramWidth) {
+      // translate graphics to center
+      g.setTranslation((svgWidth-diagramWidth)/2,0)
+    }
+    
     draw();
 
     //drawYs()

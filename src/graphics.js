@@ -12,6 +12,13 @@ export class Graphics {
     this.config = _config;
     this.svg = _config.svg;
     this.textAnchor = "start";
+    this.dx = 0
+    this.dy = 0
+  }
+
+  setTranslation(dx,dy) {
+    this.dx = dx
+    this.dy = dy
   }
 
   margin() {
@@ -41,7 +48,7 @@ export class Graphics {
       .fill(this.config.background)
       .stroke({ color: this.config.foreground, width: 1 });
 
-    const link = this.svg.link("http://seqcode.app")
+    const link = this.svg.link("https://seqcode.app")
       .target("_blank")
     const text = link.plain("seqcode ") // space for size hack with font size
       .attr('text-anchor', ALIGN_RIGHT)
@@ -68,6 +75,10 @@ export class Graphics {
 
   frameLabel(x, y, w, h, text) {
     let g = this.svg.group()
+    g.transform({
+      translateX: this.dx,
+      translateY: this.dy
+    })
     
     g.polygon([
       [x, y], // top left
@@ -99,7 +110,7 @@ export class Graphics {
       .attr('text-anchor', align)
       .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
       .fill({ color: this.config.foreground })
-      .amove(x, y - (this.config.fontSize / 3))
+      .amove(this.dx + x, this.dy + y - (this.config.fontSize / 3))
 
     // const w = this.widthOf(str)
     // this.svg.line(x, y, x + w, y)
@@ -107,29 +118,38 @@ export class Graphics {
   };
 
   line(x1, y1, x2, y2) {
-    this.svg.line(x1, y1, x2, y2).stroke({ color: this.config.foreground, width: 1 })
+    this.svg.line(this.dx + x1, this.dy + y1, this.dx + x2, this.dy + y2).stroke({ color: this.config.foreground, width: 1 })
   };
 
   dashedLine(fromX, fromY, toX, toY) {
-    this.svg.line(fromX, fromY, toX, toY)
+    this.svg.line(this.dx + fromX, this.dy + fromY, this.dx + toX, this.dy + toY)
       .attr('stroke-dasharray', this.config.dashStyle.join(' '))
       .stroke({ color: this.config.foreground, width: 1 })
   };
 
+  // drawn on edge of svg, not translated
   drawDiagramFrame(f) {
     var left = 1;
     var top = 1;
     var width = this.widthOf(f.params)
     var bottom = this.rowSpacing();
 
+    // this is the last thing drawn at the moment
+    // but save and reset translation in case it causes a future bug
+    const dx = this.dx
+    const dy = this.dy
+    this.dx = 0
+    this.dy = 0
     this.strokeRect(left, top, this.svg.width() - left * 2, this.svg.height() - top * 2);
     this.frameLabel(left, top, width + 15, bottom - top)
     this.text(f.params, left + 5, bottom - this.config.fontSize, ALIGN_LEFT);
+    this.dx = dx
+    this.dy = dy
   }
 
   strokeRect(x, y, w, h, color) {
     this.svg.rect(w, h)
-      .move(x, y)
+      .move(this.dx + x, this.dy + y)
       .fill('transparent')
       .stroke({ color: color ? color : this.config.foreground, width: 1 });
   }
@@ -144,6 +164,11 @@ export class Graphics {
     } else {
       g = this.svg.group()
     }
+
+    g.transform({
+      translateX: this.dx,
+      translateY: this.dy
+    })
 
     g.rect(w, h)
       .move(x,y)
@@ -171,6 +196,10 @@ export class Graphics {
 
   roundRect(x, y, w, h, r, t) {
     let g = this.svg.group()
+    g.transform({
+      translateX: this.dx,
+      translateY: this.dy
+    })
 
     g.rect(w, h)
       .move(x, y)
@@ -191,6 +220,10 @@ export class Graphics {
 
   transparentRect(x, y, w, h,t) {
     let g = this.svg.group()
+    g.transform({
+      translateX: this.dx,
+      translateY: this.dy
+    })
 
     g.rect(w, h)
       .move(x, y)
@@ -285,6 +318,8 @@ export class Graphics {
     }    
 
     let {x, y, w, h} = info
+    // notes do not get translated as they
+    // are set their own specific x,y coords
 
     g.attr('class','note')
 
@@ -322,6 +357,8 @@ export class Graphics {
   }
 
   rightArrow(x, y) {
+    x += this.dx
+    y += this.dy
     this.svg.polyline([
       [x - this.config.arrowSize, y - this.config.arrowSize],
       [x, y],
@@ -331,6 +368,8 @@ export class Graphics {
   }
 
   solidRightArrow(x, y) {
+    x += this.dx
+    y += this.dy
     this.svg.polyline([
       [x - this.config.arrowSize, y - this.config.arrowSize],
       [x, y],
@@ -340,6 +379,8 @@ export class Graphics {
   }
 
   leftArrow(x, y) {
+    x += this.dx
+    y += this.dy
     this.svg.polyline([
       [x + this.config.arrowSize, y - this.config.arrowSize],
       [x, y],
@@ -349,6 +390,8 @@ export class Graphics {
   }
 
   solidLeftArrow(x, y) {
+    x += this.dx
+    y += this.dy
     this.svg.polyline([
       [x + this.config.arrowSize, y - this.config.arrowSize],
       [x, y],
@@ -358,6 +401,8 @@ export class Graphics {
   }
 
   cross(x, y) {
+    x += this.dx
+    y += this.dy
     let g = this.svg.group()
     g.line(x - this.config.arrowSize, y - this.config.arrowSize, x + this.config.arrowSize, y + this.config.arrowSize)
       .stroke({ color: this.config.foreground, width: 1 })
@@ -368,8 +413,8 @@ export class Graphics {
   boundary(x, y, size) {
     let g = this.svg.group()
     g.transform({
-      translateX: x,
-      translateY: y
+      translateX: this.dx + x,
+      translateY: this.dy + y
     })
 
     g.circle(size)
@@ -388,8 +433,8 @@ export class Graphics {
 
     let g = this.svg.group()
     g.transform({
-      translateX: x,
-      translateY: y
+      translateX: this.dx + x,
+      translateY: this.dy + y
     })
 
     g.circle(size)
@@ -413,8 +458,8 @@ export class Graphics {
 
     let g = this.svg.group()
     g.transform({
-      translateX: x,
-      translateY: y
+      translateX: this.dx + x,
+      translateY: this.dy + y
     })
 
     g.circle(size)
@@ -429,8 +474,8 @@ export class Graphics {
   actor(x, y, size) {
     let g = this.svg.group()
     g.transform({
-      translateX: x,
-      translateY: y
+      translateX: this.dx + x,
+      translateY: this.dy + y
     })
 
     g.circle(size / 3)
@@ -449,7 +494,7 @@ export class Graphics {
 
   circle(x, y, r) {
     this.svg.circle(r * 2)
-      .move(x - r, y - r)
+      .move(this.dx + x - r, this.dy + y - r)
       .fill(this.config.fill)
       .stroke({ color: this.config.foreground, width: 1 });
   }
