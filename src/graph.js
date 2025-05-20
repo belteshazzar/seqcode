@@ -912,7 +912,8 @@ export function graph(_objs, rootCall, g) {
       ss.shift();
       ss.shift();
       ss.shift();
-      var text = ss.join(",");
+      // if there are no more elements in ss, empty string
+      var text = "" + ss.join(",");
       return {x,y,w,text}
     }
   };

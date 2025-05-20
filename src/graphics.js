@@ -253,7 +253,7 @@ export class Graphics {
       }
     } else {
       return {
-        text: txt ? txt.trim() : null,
+        text: txt ? txt.trim() : "",
         link: null
       }
     }
