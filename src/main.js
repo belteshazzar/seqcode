@@ -14,9 +14,9 @@ export default function (text,options) {
     fontFace: 'verdana',
     foreground: "black",
     background: 'white',
-    noteFill: 'rgba(255,255,204,0.8)',
+    noteLight: '#FFFDA1',
+    noteDark: '#FFEB5B',
     noteStroke: '#ccc',
-//    fill: '#eee',
     fillLight: '#eee',
     fillDark: '#ddd',
     linkColor: "#999",
@@ -41,12 +41,16 @@ export default function (text,options) {
 
   config.svg = SVG()
 
-  if (!config.fill) {
-    config.fill = config.svg.gradient('linear', (add) => {
-      add.stop(0, config.fillLight)
-      add.stop(1, config.fillDark)
-    })
-  }
+  config.fill = config.svg.gradient('linear', (add) => {
+    add.stop(0, config.fillLight)
+    add.stop(1, config.fillDark)
+  })
+
+  config.noteFill = config.svg.gradient('linear', (add) => {
+    add.stop(0, config.noteLight)
+    add.stop(1, config.noteDark)
+  })
+  config.noteFill.from(0,0).to(1,1)
 
   const gfx = new Graphics(config);
 

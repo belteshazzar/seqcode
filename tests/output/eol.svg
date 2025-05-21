@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="289" height="300" viewBox="0 0 289 300"><defs><linearGradient id="SvgjsLinearGradient1003"><stop stop-color="#eeeeee" offset="0"></stop><stop stop-color="#dddddd" offset="1"></stop></linearGradient><text id="seqcode">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="289" height="300" viewBox="0 0 289 300"><defs><linearGradient id="SvgjsLinearGradient1003"><stop stop-color="#eeeeee" offset="0"></stop><stop stop-color="#dddddd" offset="1"></stop></linearGradient><linearGradient x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffda1" offset="0"></stop><stop stop-color="#ffeb5b" offset="1"></stop></linearGradient><text id="seqcode">
 &quot;string goes to end of line
 
 .
