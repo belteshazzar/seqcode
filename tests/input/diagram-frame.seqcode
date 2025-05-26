@@ -1,0 +1,8 @@
+frame(DIAGRAM) {
+  a: actor
+  f: Frame
+
+  opt(TEST) {
+    f.go()
+  }
+}

@@ -984,7 +984,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1167,7 +1167,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1270,7 +1270,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1378,7 +1378,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1508,7 +1508,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1600,7 +1600,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1822,7 +1822,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;
@@ -1914,7 +1914,7 @@ export function graph(_objs, rootCall, g) {
         var last = this.nodes[this.nodes.length - 1];
         if (last instanceof SelfMessage
           && last.name == "later"
-          && last.params == null
+          && last.params === ""
           && last.nodes.length > 0) {
           this.nodes.length--;
           last.islater = true;

@@ -141,8 +141,7 @@ export class Graphics {
     this.dx = 0
     this.dy = 0
     this.strokeRect(left, top, this.svg.width() - left * 2, this.svg.height() - top * 2);
-    this.frameLabel(left, top, width + 15, bottom - top)
-    this.text(f.params, left + 5, bottom - this.config.fontSize, ALIGN_LEFT);
+    this.frameLabel(left, top, width + 15, bottom - top,f.params)
     this.dx = dx
     this.dy = dy
   }

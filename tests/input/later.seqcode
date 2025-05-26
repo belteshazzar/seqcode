@@ -1,0 +1,15 @@
+
+a: actor
+obj: Object
+
+later {
+  obj.do()
+}
+
+later() {
+  obj.do()
+}
+
+later() {
+  obj.do()
+}

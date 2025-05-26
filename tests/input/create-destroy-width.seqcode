@@ -1,0 +1,8 @@
+actor : Actor
+life : "Life Line"
+
+life.create()
+life.method(method parameters) {
+    return(method results)
+}
+life.destroy()

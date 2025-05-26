@@ -89,6 +89,7 @@ export function parse(tokens) {
         tok = pop();
         if (tok == null) {
           errors.push(new ParseError(null, "Expected ':','.','>' or '(' after identifier, found eof", 3));
+          call.subCalls.push(new Call(call.objIndex, ident.str, "", false));
           return;
         }
 
