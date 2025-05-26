@@ -60,23 +60,23 @@ export function parse(tokens) {
         return;
       }
       else if (tok.type == CLASSIFIER) {
+        let className = "Object"
         if (peek() == null) {
-          errors.push(new ParseError(null, "expected class name after ':' found eof", 1));
-          return;
-        }
-        tok = pop();
-        if (tok.type != IDENT) {
-          errors.push(new ParseError(tok, "expected class name after ':' found " + tok.str, 2));
-          continue;
+          errors.push(new ParseError(null, "Expected class name after ':' but found <EOF>", 1));
+        } else if (peek().type != IDENT) {
+          errors.push(new ParseError(tok, "Expected class name after ':' but found '" + tok.str + "'", 2));
+        } else {
+          tok = pop()
+          className = tok.str
         }
 
-        if (indexOf(tok.str) == -1) {
-          objects.push(new Obj("", tok.str));
+        if (indexOf(className) == -1) {
+          objects.push(new Obj("", className));
         }
       }
       else if (tok.type == BRACE_CLOSE) {
         if (call == rootCall) {
-          errors.push(new ParseError(tok, "identifier or ':'", 21));
+          errors.push(new ParseError(tok, "Expected identifier or ':' but found '}'", 21));
           continue;
         }
         else {
@@ -88,23 +88,21 @@ export function parse(tokens) {
         var ident = tok;
         tok = pop();
         if (tok == null) {
-          errors.push(new ParseError(null, " expected ':','.','>' or '(' after identifier, found eof", 3));
+          errors.push(new ParseError(null, "Expected ':','.','>' or '(' after identifier, found eof", 3));
           return;
         }
 
         if (tok.type == CLASSIFIER) {
           var objName = ident.str;
+          var className = "Object";
 
           if (peek() == null) {
-            errors.push(new ParseError(null, "expected class name after ':'", 4));
-            return;
+            errors.push(new ParseError(null, "Expected class name after ':' but found eof", 4));
+          } else if (peek().type != IDENT) {
+            errors.push(new ParseError(peek(), "Expected class name after ':' but found " + peek().str, 5));
+          } else {
+            className = pop().str;
           }
-          tok = pop();
-          if (tok.type != IDENT) {
-            errors.push(new ParseError(tok, "expected class name after ':'", 5));
-            continue;
-          }
-          var className = tok.str;
 
           if (indexOf(objName) == -1) {
             objects.push(new Obj(objName, className));
@@ -113,32 +111,27 @@ export function parse(tokens) {
         else if (tok.type == CALL || tok.type == SIGNAL) {
           var asynch = tok.str == '>';
           var objName = ident.str;
+          var name = "func"
+          var params = ""
 
-          tok = pop(); // method name
-          if (tok == null) {
-            errors.push(new ParseError(null, "method name", 6));
-            return;
-          }
-          if (tok.type != IDENT) {
-            errors.push(new ParseError(tok, "method name", 7));
-            continue;
-          }
-          var name = tok.str;
-          var params = null;
           if (peek() == null) {
-            errors.push(new ParseError(null, "parameters", 8));
-            return;
+            errors.push(new ParseError(null, "Expected method name but found eof", 6));
+          } else if (peek().type != IDENT) {
+            errors.push(new ParseError(peek(), "Expected method name but found " + peek().str, 7));
+          } else { 
+            name = pop().str;
           }
-          tok = pop(); // params
-          if (tok.type != PARAMS) {
-            errors.push(new ParseError(tok, "expected parameters", 9));
-            continue;
-          }
-          params = tok.str;
 
+          if (peek() == null) {
+            errors.push(new ParseError(null, "Expected parameters but found eof", 8));
+          } else if (peek().type != PARAMS) {
+            errors.push(new ParseError(peek(), "Expected parameters, but found: " + peek().str, 9));
+          } else {
+            params = pop().str;
+          }
           var target = indexOf(objName);
           if (target == -1) {
-            objects.push(new Obj("", objName));
+            objects.push(new Obj(objName, "Object"));
             target = objects.length - 1;
           }
 
@@ -155,14 +148,12 @@ export function parse(tokens) {
             doParse(subCall);
             call.subCalls.push(subCall);
 
-            tok = pop();
-            if (tok == null) {
-              errors.push(new ParseError(null, "}", 13));
-              return;
-            }
-            if (tok.type != BRACE_CLOSE) {
-              errors.push(new ParseError(tok, "}", 14));
-              continue;
+            if (peek() == null) {
+              errors.push(new ParseError(null, "Expected '}' but found eof", 13));
+            } else if (peek().type != BRACE_CLOSE) {
+              errors.push(new ParseError(tok, "Expected '}' but found " + peek().str, 14));
+            } else {
+              pop(); // remove '}'
             }
 
             continue;
@@ -197,11 +188,11 @@ export function parse(tokens) {
             tok = pop();
 
             if (tok == null) {
-              errors.push(new ParseError(tok, '}', 18));
+              errors.push(new ParseError(tok, "Expected '}' but found eof", 18));
               return;
             }
             if (tok.type != BRACE_CLOSE) {
-              errors.push(new ParseError(tok, '}', 19));
+              errors.push(new ParseError(tok, " Expected '}' but found " + tok.str, 19));
               continue;
             }
           }
@@ -210,12 +201,12 @@ export function parse(tokens) {
           }
         }
         else {
-          errors.push(new ParseError(tok, "'.','>',':' or '('", 20));
+          errors.push(new ParseError(tok, "Expected '.','>',':' or '('", 20));
           continue;
         }
       } // tok.type()==IDENT
       else {
-        errors.push(new ParseError(tok, "identifier, }, or EOF", 21));
+        errors.push(new ParseError(tok, "Expected identifier, '}', or EOF", 21));
       }
     } // while loop
 
