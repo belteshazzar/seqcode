@@ -30,6 +30,7 @@ export class Obj {
 
   addLifeEvent(ev) {
     this.lifeEvents.push(ev);
+    this.bottom = Math.max(this.bottom,ev.y)
   };
 
   addLabel(label) {
@@ -40,7 +41,6 @@ export class Obj {
       this.labels[y] = label;
     }
     this.bottom = Math.max(this.bottom, label.bottom);
-
   };
 
   addLeftFrame(f) {
@@ -60,7 +60,6 @@ export class Obj {
     }
 
     this.bottom = Math.max(this.bottom, f.bottom);
-
   };
 
   leftFrameDepth(top, bottom) {
@@ -126,7 +125,6 @@ export class Obj {
   };
 
   hasCreationEvent(y1, y2) {
-
     if (this.lifeEvents.length == 0) {
       // no life events, gets created at y=0
       return y1 == 0;
@@ -160,7 +158,6 @@ export class Obj {
       y1 = 0;
       y2 = this.bottom;
     }
-
     let w = 10;
 
     for (let y = y1; y <= y2; y++) {
@@ -168,7 +165,8 @@ export class Obj {
     }
 
     if (this.hasCreationEvent(y1, y2)) {
-      w = Math.max(w, this.creationWidth(g) / 2 + w);
+      let _w = w
+      w = Math.max(w, this.creationWidth(g) / 2 + 10);
     }
 
     const obj = this;
@@ -208,8 +206,11 @@ export class Obj {
       w = Math.max(w, this.rightFrameSpace(y));
     }
 
+    // it will either have a creation event at the top, or
+    // further down which is more like a label
     if (this.hasCreationEvent(y1, y2)) {
-      w = Math.max(w, this.creationWidth(g) / 2 + w);
+      const _w = w
+      w = Math.max(w, this.creationWidth(g) / 2 + 10);
     }
 
     // invocations may not have a self message if them come from the left
@@ -229,6 +230,13 @@ export class Obj {
       w = Math.max(w, level * 10 + labelOverhang + obj.rightFrameSpace(indx)); // TODO: same as drawing
 
       //w = Math.max(w,level * 10 + Math.max(25,g.widthOf("{"+label.params+"}")/2) + obj.rightFrameSpace(indx)); // TODO: same as drawing
+    });
+
+    this.lifeEvents.forEach((ev) => {
+      if (ev.event == OBJ_CREATED && ev.y >= y1 && ev.y <= y2) {
+        const _w = w
+        w = Math.max(w, this.creationWidth(g) / 2 + 10);
+      }
     });
 
     this.selfMsgs.forEach(function (msg, indx) {

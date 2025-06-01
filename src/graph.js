@@ -422,19 +422,13 @@ export function graph(_objs, rootCall, g) {
   function layout() {
 
     let dim = { w: 0, h: y(maxY + 2) };
-
     dim = extentsOf(dim, layoutNotes());
-
     dim.w = Math.max(dim.w, layoutObjects());
-
     layoutLines();
-
     layoutFrames(root);
-
     for (let i = 0; i < root.frames.length; i++) {
       dim.w = Math.max(dim.w, root.frames[i].layoutInfo.xx + root.frames[i].layoutInfo.w + g.objectSpacing());
     }
-
     dim.w = Math.max(dim.w, objs[objs.length - 1].x + objs[objs.length - 1].getRightWidth(g) + g.objectSpacing());
 
     return dim;
@@ -635,7 +629,6 @@ export function graph(_objs, rootCall, g) {
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
       g.transparentRect(left, y(r.top), w, y(r.bottom) - y(r.top), txt);
-      // console.log(txt)
       // g.text(txt, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
     }
   }
@@ -696,7 +689,7 @@ export function graph(_objs, rootCall, g) {
     var toX = objs[l.to.objIndex].x + WIDTH / 2 * l.to.level;
 
     if (isNaN(fromX) || isNaN(toX)) {
-      console.log(l.from.objIndex + "#" + l.from.level + ":" + fromX + " -> " + l.to.objIndex + "#" + l.to.level + ":" + toX);
+      console.error(l.from.objIndex + "#" + l.from.level + ":" + fromX + " -> " + l.to.objIndex + "#" + l.to.level + ":" + toX);
       return;
     }
     if (l.style == LOST) {
@@ -1764,7 +1757,7 @@ export function graph(_objs, rootCall, g) {
       this.level = -1;
     }
     text() {
-      console.log(new Error().stack);
+      console.error(new Error().stack);
       throw "MultiFrame.text";
     }
     check() {
@@ -2217,10 +2210,10 @@ export function graph(_objs, rootCall, g) {
 
     if (diagramFrame != null) g.drawDiagramFrame(diagramFrame);
   } catch (e) {
-    console.log(e);
+    console.error(e);
   }
   if (errors.length > 0) {
-    console.log("errors:");
-    console.log(errors);
+    console.error("errors:");
+    console.error(errors);
   }
 };

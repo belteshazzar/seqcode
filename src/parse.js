@@ -44,11 +44,9 @@ export function parse(tokens) {
   function indexOf(str) {
     for (var i = 0; i < objects.length; i++) {
       if (objects[i].name == str || objects[i].cls == str) {
-        //console.log("indexOf("+str+") = " + i);
         return i;
       }
     }
-    //console.log("indexOf("+str+") = -1");
     return -1;
   };
 

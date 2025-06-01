@@ -18,18 +18,26 @@ describe.each(
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
     const {svg,errors} = seqcode(txt, {fontFace: 'sans-serif'});
-    if (errors) console.log(errors)
+    if (errors) console.error(errors)
     fs.writeFileSync(`./tests/output/${f}.svg`, svg, { encoding: 'utf8' })
   })
 
 })
 
-describe('svg from string', () => {
+describe('from string', () => {
   test('test1', () => {
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
     const {svg,errors} = seqcode("bob", {fontFace: 'sans-serif'});
-    if (errors) console.log(errors)
-    fs.writeFileSync(`./tests/output/test1.svg`, svg, { encoding: 'utf8' })
+    if (errors) console.error(errors)
+    fs.writeFileSync(`./tests/output/from-string-test1.svg`, svg, { encoding: 'utf8' })
+  })
+
+  test('create-width', () => {
+    // test with sans-serif as we haven't loaded fonts into
+    // svgdom which it would need to measure text
+    const {svg,errors} = seqcode("frame(x){me:actor\nb:Object\na:Object\na.test() { state(label) }\na.create()}", {fontFace: 'sans-serif'});
+    if (errors) console.error(errors)
+    fs.writeFileSync(`./tests/output/from-string-create-width.svg`, svg, { encoding: 'utf8' })
   })
 })
