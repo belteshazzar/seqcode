@@ -5,6 +5,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
   build: {
+    sourcemap: true,
     lib: {
       entry: resolve(resolve(), 'src/main.js'), // Entry point of your library
       name: 'SeqCode', // Replace with your library name
