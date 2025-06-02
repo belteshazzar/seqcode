@@ -140,14 +140,15 @@ export class Graphics {
     const dy = this.dy
     this.dx = 0
     this.dy = 0
-    this.strokeRect(left, top, this.svg.width() - left * 2, this.svg.height() - top * 2);
+    this.strokeRect(left, top, this.svg.width() - left * 2, this.svg.height() - top * 2)
+      .back();
     this.frameLabel(left, top, width + 15, bottom - top,f.params)
     this.dx = dx
     this.dy = dy
   }
 
   strokeRect(x, y, w, h, color) {
-    this.svg.rect(w, h)
+    return this.svg.rect(w, h)
       .move(this.dx + x, this.dy + y)
       .fill('transparent')
       .stroke({ color: color ? color : this.config.foreground, width: 1 });
