@@ -243,17 +243,24 @@ export class Graphics {
   };
 
   textLink(txt) {
-    const regex = /(.*)\|\s*(\S+)$/g;
-    let match = regex.exec(txt);
+    function splitPreservingEscapedPipes(input) {
+      return input.split(/(?<!\\)\|/).map(part => part.replace(/\\\|/g, '|'));
+    }
 
-    if (match) {
+    if (txt == null) {
+      return { text: "", link: null };
+    }
+
+    let parts = splitPreservingEscapedPipes(txt);
+
+    if (parts.length == 2) {
       return {
-        text: match[1].trim(),
-        link: match[2].trim()
+        text: parts[0].trim(),
+        link: parts[1].trim()
       }
     } else {
       return {
-        text: txt ? txt.trim() : "",
+        text: txt.trim().replace(/\\\|/g, '|'),
         link: null
       }
     }

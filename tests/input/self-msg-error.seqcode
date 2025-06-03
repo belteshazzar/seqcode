@@ -1,0 +1,12 @@
+me : actor
+fred: actor
+steve : actor
+
+fred > get() {
+  self() { }
+}
+pause()
+steve > get()
+pause()
+pause()
+steve > get()

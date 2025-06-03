@@ -31,7 +31,7 @@ main.start() {
 
     # self messages with no body can be +found or -lost
     -sendStats(...)
-    ref(diagram 2 | link-to-diagram-2)
+    ref( http://secode.app | http://seqcode.app )
   }
 }
 
@@ -44,4 +44,4 @@ getCoffee( strong ) {
 }
 
 # notes are of the form note(x,y,width,message)
-note(450,10,200,welcome to seqcode.app! uml sequence diagrams automatically created from simple code)
+note(270,20,300,seqcode - uml sequence diagrams automatically created from simple code)

@@ -156,7 +156,11 @@ export class Obj {
 
     if (y1 == undefined) {
       y1 = 0;
-      y2 = this.bottom;
+      let invBottom = 0
+      for (let inv of this.invocations) {
+        if (inv.bottom > invBottom) invBottom = inv.bottom;
+      }
+      y2 = Math.max(this.bottom,invBottom);
     }
     let w = 10;
 
@@ -197,7 +201,11 @@ export class Obj {
 
     if (y1 == undefined) {
       y1 = 0;
-      y2 = this.bottom;
+      let invBottom = 0
+      for (let inv of this.invocations) {
+        if (inv.bottom > invBottom) invBottom = inv.bottom;
+      }
+      y2 = Math.max(this.bottom,invBottom);
     }
 
     let w = 10;

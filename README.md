@@ -1,2 +1,50 @@
 # SeqCode
 
+![Example seqcode diagram](/tests/output/example.svg "Example seqcode diagram")
+
+<pre><code>
+dev:actor
+main:Class
+
+main.start() {
+
+  t.create() {
+
+    x: "Int \"Counter" # long name in quotes, escaped quote
+    x.create()
+  }
+  # . is a call (synchronous)
+  # > is a message (asynchronous)
+  t > run() {
+  
+    # alt, par, strict and seq create frames with multiple sections
+    alt(morning) {
+  
+      # loop, opt, critical, ignore, consider, assert, neg and break create frames
+      loop(while(true\)) { # parameters end on closing bracket, escaped bracket
+        x.inc()
+      }
+    }
+    alt(afternoon) {}
+  }
+
+  # later is used to perform actions after, outside of the normal flow
+  later() {
+
+    # self messages with no body can be +found or -lost
+    -sendStats(...)
+    ref(diagram 2 | link-to-diagram-2)
+  }
+}
+
+getCoffee( strong ) {
+
+  # invariant labels also supported
+  state(caffeinated)
+
+  invariant(drunk)
+}
+
+# notes are of the form note(x,y,width,message)
+note(450,10,200,welcome to seqcode.app! uml sequence diagrams automatically created from simple code)
+</code></pre>

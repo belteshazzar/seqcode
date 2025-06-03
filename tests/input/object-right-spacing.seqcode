@@ -1,0 +1,22 @@
+
+a : Object
+b : Object
+c : Object
+
+b > get()
+b > get()
+b > get()
+b > get()
+b > get()
+b > get()
+b > get()
+b > get()
+b > get()
+b > get()
+
+c.create()
+c > get()
+c > get()
+c > get()
+c > get()
+c > get()

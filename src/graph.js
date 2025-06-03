@@ -5,6 +5,8 @@
 import { Obj, OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
 import { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } from "./graphics.js";
 
+const DEBUG = false;
+
 export function graph(_objs, rootCall, g) {
 
   function minmax(node) {
@@ -720,22 +722,24 @@ export function graph(_objs, rootCall, g) {
 
     } else if (l.from.objIndex == l.to.objIndex) {
 
+        // return self line, y == where it joins parent
+
       fromX += WIDTH / 2;
       toX += WIDTH / 2;
       var vertX = Math.max(fromX, toX) + WIDTH;
       g.text(l.text, fromX + 3, y(l.y),ALIGN_LEFT);
       if (l.style[0]) {
         g.line(fromX, y(l.y), vertX, y(l.y));
-        g.line(vertX, y(l.y), vertX, y(l.y + 1));
-        g.line(toX, y(l.y + 1), vertX, y(l.y + 1));
-        if (l.style[1]) g.solidLeftArrow(toX, y(l.y + 1));
-        else g.leftArrow(toX, y(l.y + 1));
+        g.line(vertX, y(l.y), vertX, y(l.to.top));
+        g.line(toX, y(l.to.top), vertX, y(l.to.top));
+        if (l.style[1]) g.solidLeftArrow(toX, y(l.to.top));
+        else g.leftArrow(toX, y(l.to.top));
       } else {
-        g.dashedLine(fromX, y(l.y), vertX, y(l.y));
-        g.dashedLine(vertX, y(l.y), vertX, y(l.y + 1));
-        g.dashedLine(toX, y(l.y + 1), vertX, y(l.y + 1));
-        if (l.style[1]) g.solidLeftArrow(toX, y(l.y + 1));
-        else g.leftArrow(toX, y(l.y + 1));
+        g.dashedLine(fromX, y(l.from.bottom), vertX, y(l.from.bottom));
+        g.dashedLine(vertX, y(l.from.bottom), vertX, y(l.y));
+        g.dashedLine(toX, y(l.y), vertX, y(l.y));
+        if (l.style[1]) g.solidLeftArrow(toX, y(l.y));
+        else g.leftArrow(toX, y(l.y));
       }
     } else {
       if (fromX < toX) {
@@ -1215,7 +1219,7 @@ export function graph(_objs, rootCall, g) {
       this.bottom = mark(this, this, y);
       if (!this.islater) {
         this.msgBottom = mark(this.parent, this, this.bottom);
-        line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN); // MIGHT NOT JOIN!!!!!!!
+        line((this.returns ? this.returns : ""), this, this.parent, this.msgBottom, RETURN); // MIGHT NOT JOIN!!!!!!!
       }
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
@@ -2151,11 +2155,19 @@ export function graph(_objs, rootCall, g) {
     return nodes;
   }
 
-  // function drawYs() {
-  //   for (let i = 0; i <= maxY; i++) {
-  //     g.text("y=" + i, 20, y(i))
-  //   }
-  // }
+   function drawYs() {
+     for (let i = 0; i <= maxY; i++) {
+       g.text(i, 3, y(i),ALIGN_LEFT)
+     }
+     for (let i = 0; i < objs.length; i++) {
+      g.text(i, objs[i].x, 20, ALIGN_LEFT)
+      for (let j=0 ; j < objs[i].marks.length; j++) {
+        if (objs[i].marks[j]) g.text("X", objs[i].x, y(j), ALIGN_LEFT)
+      }
+
+      console.log(i + " " + objs[i].name + " " + objs[i].bottom + " " + objs[i].getLeftWidth(g) + " " + objs[i].getRightWidth(g))  
+     }
+   }
 
 
   if (_objs.length == 0) {
@@ -2206,7 +2218,7 @@ export function graph(_objs, rootCall, g) {
     
     draw();
 
-    //drawYs()
+    if (DEBUG) drawYs()
 
     if (diagramFrame != null) g.drawDiagramFrame(diagramFrame);
   } catch (e) {

@@ -1,0 +1,5 @@
+ref( text with an escaped bar "\|" | link )
+ref( text | multiple | parts )
+ref( text \| with \| legit | link )
+
+note( 50,50,200,text with an escaped bar "\|" | link )
