@@ -31,7 +31,7 @@ main.start() {
 
     # self messages with no body can be +found or -lost
     -sendStats(...)
-    ref( http://secode.app | http://seqcode.app )
+    ref( http://seqcode.app | http://seqcode.app )
   }
 }
 

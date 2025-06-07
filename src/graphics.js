@@ -73,6 +73,13 @@ export class Graphics {
     return w
   };
 
+  widthOfNote(str) {
+    const txt = this.svg.text(str).font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFace });
+    const w = txt.bbox().width
+    txt.remove()
+    return w
+  };
+
   frameLabel(x, y, w, h, text) {
     let g = this.svg.group()
     g.transform({
@@ -106,12 +113,18 @@ export class Graphics {
     if (align !== ALIGN_LEFT && align != ALIGN_CENTER && align != ALIGN_RIGHT) {
       throw new Error("Invalid alignment: " + align);
     }
-    return this.svg.plain(str)
+    let g = this.svg.group()
+    g.plain(str)
+      .attr('text-anchor', align)
+      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+      .stroke({ color: this.config.background, width: 2 })
+      .amove(this.dx + x, this.dy + y - (this.config.fontSize / 3))
+    g.plain(str)
       .attr('text-anchor', align)
       .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
       .fill({ color: this.config.foreground })
       .amove(this.dx + x, this.dy + y - (this.config.fontSize / 3))
-
+    return g;
     // const w = this.widthOf(str)
     // this.svg.line(x, y, x + w, y)
     //   .stroke({ color: 'red', width: 1 })
@@ -283,13 +296,13 @@ export class Graphics {
       for (var i = 1; i < wa.length; i++) {
         var word = wa[i].trim();
         if (word == "") continue;
-        measure = this.widthOf(lastPhrase + splitChar + word);
+        measure = this.widthOfNote(lastPhrase + splitChar + word);
         if (measure < w - 2 * pad) {
           lastPhrase += (splitChar + word);
         } else {
           phraseArray.push(lastPhrase);
           lastPhrase = word;
-          measure = this.widthOf(lastPhrase);
+          measure = this.widthOfNote(lastPhrase);
           if (measure > w - 2 * pad) {
             w = measure + 2 * pad;
             return false;
@@ -306,7 +319,7 @@ export class Graphics {
     y = Math.max(y, 0);
     var lines = getLines.call(this);
     while (lines === false) lines = getLines.call(this);
-    var h = pad * 2 + lines.length * this.config.fontSize * lineSpacing;
+    var h = pad * 2 + lines.length * this.config.noteFontSize * lineSpacing;
     return { x: x, y: y, w: w, h: h, lines: lines, link: link };
   };
 
@@ -348,11 +361,11 @@ export class Graphics {
       .stroke({ color: this.config.noteStroke, width: 1 });
 
     for (var i = 0; i < info.lines.length; i++) {
-      this.text(info.lines[i],
-        info.x + pad,
-        info.y + pad + this.config.fontSize * lineSpacing * (i + 1), ALIGN_LEFT)
-        .addTo(g)
-        .fill(this.config.foreground)
+      g.plain(info.lines[i])
+        .attr('text-anchor', ALIGN_LEFT)
+        .font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFace })
+        .fill({ color: this.config.noteForeground })
+        .amove(this.dx + info.x + pad, this.dy + info.y + pad + this.config.fontSize * lineSpacing * (i + 1) - (this.config.fontSize / 3))
     }
 
     if (info.link) {
