@@ -2169,14 +2169,9 @@ export function graph(_objs, rootCall, g) {
      }
    }
 
-
-  if (_objs.length == 0) {
-    _objs.push(new Obj("", "actor"));
-  }
-
   var diagramFrame = null;
 
-  init(_objs);
+  init();
   try {
 
     if (rootCall.subCalls.length == 1

@@ -40,7 +40,6 @@ export default function (text,options) {
   Object.assign(config, options);
 
   const toks = tokenize(text);
-
   const ast = parse(toks);
 
   config.svg = SVG()

@@ -18,11 +18,11 @@ export function tokenize(text) {
   var tokens = [];
   var token = null;
   var tokenCol = 0;
-  var tokenLine = 0;
+  var tokenLine = 1;
   var inParams = false;
   var escaped = false;
   var inString = false;
-  var ln = 0;
+  var ln = 1;
   var col = 0;
 
   for (var indx = 0; indx < text.length; indx++) {
@@ -160,7 +160,11 @@ export function tokenize(text) {
   }
 
   if (token != null) {
-    tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+    if (inParams) {
+      tokens.push(new Token(tokenLine, tokenCol, PARAMS, token));
+    } else {
+      tokens.push(new Token(tokenLine, tokenCol, IDENT, token));
+    }
   }
 
   return tokens;

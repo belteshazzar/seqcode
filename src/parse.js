@@ -39,7 +39,8 @@ export function parse(tokens) {
   }
 
   var errors = [];
-  var objects = [];
+  let IMPLICIT_ACTOR = new Obj("","actor")
+  var objects = [IMPLICIT_ACTOR];
 
   function indexOf(str) {
     for (var i = 0; i < objects.length; i++) {
@@ -56,8 +57,19 @@ export function parse(tokens) {
 
       if (tok == null) {
         return;
-      }
-      else if (tok.type == CLASSIFIER) {
+      } else if (tok.type == BRACE_CLOSE) {
+        // This is the end of the call, if we are in the root
+        // call then there should not be a close brace here.
+        if (call == rootCall) {
+          errors.push(new ParseError(tok, "Expected identifier or ':' but found '}'", 21));
+          continue;
+        } else {
+          unpop();
+          return;
+        }
+      } else if (tok.type == CLASSIFIER) {
+        // If the next token is not an identifier we default
+        // it to an Object class.
         let className = "Object"
         if (peek() == null) {
           errors.push(new ParseError(null, "Expected class name after ':' but found <EOF>", 1));
@@ -68,30 +80,26 @@ export function parse(tokens) {
           className = tok.str
         }
 
-        if (indexOf(className) == -1) {
+        // If the first object is the implicit actor, then we
+        // update it with the new object.
+        if (objects[0] == IMPLICIT_ACTOR) {
+          objects[0].name = "";
+          objects[0].cls = className;
+          IMPLICIT_ACTOR = null;
+        } else {
           objects.push(new Obj("", className));
         }
-      }
-      else if (tok.type == BRACE_CLOSE) {
-        if (call == rootCall) {
-          errors.push(new ParseError(tok, "Expected identifier or ':' but found '}'", 21));
-          continue;
-        }
-        else {
-          unpop();
-          return;
-        }
-      }
-      else if (tok.type == IDENT) {
+
+      } else if (tok.type == IDENT) {
+        // Identifier is either going to be a:
+        // 1. Declartion of an object if it has a following classifier
+        // 2. A message to an object if it has a following '.' or '>'
+        // 3. A self message
+
         var ident = tok;
         tok = pop();
-        if (tok == null) {
-          errors.push(new ParseError(null, "Expected ':','.','>' or '(' after identifier, found eof", 3));
-          call.subCalls.push(new Call(call.objIndex, ident.str, "", false));
-          return;
-        }
 
-        if (tok.type == CLASSIFIER) {
+        if (tok != null && tok.type == CLASSIFIER) {
           var objName = ident.str;
           var className = "Object";
 
@@ -103,11 +111,16 @@ export function parse(tokens) {
             className = pop().str;
           }
 
-          if (indexOf(objName) == -1) {
+          // If the first object is the implicit actor, then we
+          // update it with the new object.
+          if (objects[0] == IMPLICIT_ACTOR) {
+            objects[0].name = objName;
+            objects[0].cls = className;
+            IMPLICIT_ACTOR = null;
+          } else {
             objects.push(new Obj(objName, className));
           }
-        }
-        else if (tok.type == CALL || tok.type == SIGNAL) {
+        } else if (tok != null && (tok.type == CALL || tok.type == SIGNAL)) {
           var asynch = tok.str == '>';
           var objName = ident.str;
           var name = "func"
@@ -128,9 +141,10 @@ export function parse(tokens) {
           } else {
             params = pop().str;
           }
+
           var target = indexOf(objName);
           if (target == -1) {
-            objects.push(new Obj(objName, "Object"));
+            objects.push(new Obj(objName, "Object",false)); // implicitly created object
             target = objects.length - 1;
           }
 
@@ -156,8 +170,7 @@ export function parse(tokens) {
             }
 
             continue;
-          }
-          else {
+          } else {
             ///////////////////////////////////////////////////////////////////////
             //
             // MSG
@@ -167,44 +180,44 @@ export function parse(tokens) {
             call.subCalls.push(new Call(target, name, params, asynch));
             continue;
           }
-        }
-        else if (tok.type == PARAMS) {
-          // var name = ident.str;
-          // var params = tok.str;
-          
+        } else {
           ///////////////////////////////////////////////////////////////////////
           //
           // MSG TO SELF
           //
           ///////////////////////////////////////////////////////////////////////
 
-          if (peek() != null && peek().str == '{') {
-            pop(); // remove '{'
-            var subCall = new Call(call.objIndex, ident, tok, false);
+          let msg = ident.str;
+          var params = "";
+          if (tok == null) {
+            errors.push(new ParseError(null, "Expected parameters but found eof", 8));
+          } else if (tok.type != PARAMS) {
+            errors.push(new ParseError(tok, "Expected parameters, but found: " + tok.str, 9));
+          } else {
+            params = tok.str;
+            tok = pop(); // remove params
+          }
+
+          var subCall = new Call(call.objIndex, msg, params, false);
+
+          if (tok != null && tok.type == BRACE_OPEN) {
+            // '{' already removed by pop()
             doParse(subCall);
-            call.subCalls.push(subCall);
 
-            tok = pop();
+            if (peek() == null) {
+              errors.push(new ParseError(null, "Expected '}' but found eof", 13));
+            } else if (peek().type != BRACE_CLOSE) {
+              errors.push(new ParseError(tok, "Expected '}' but found " + peek().str, 14));
+            } else {
+              pop(); // remove '}'
+            }
 
-            if (tok == null) {
-              errors.push(new ParseError(tok, "Expected '}' but found eof", 18));
-              return;
-            }
-            if (tok.type != BRACE_CLOSE) {
-              errors.push(new ParseError(tok, " Expected '}' but found " + tok.str, 19));
-              continue;
-            }
+          } else if (tok != null) {
+            unpop()
           }
-          else {
-            call.subCalls.push(new Call(call.objIndex, ident, tok, false));
-          }
+          call.subCalls.push(subCall);
         }
-        else {
-          errors.push(new ParseError(tok, "Expected '.','>',':' or '('", 20));
-          continue;
-        }
-      } // tok.type()==IDENT
-      else {
+      } else {
         errors.push(new ParseError(tok, "Expected identifier, '}', or EOF", 21));
       }
     } // while loop
