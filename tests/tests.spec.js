@@ -17,9 +17,9 @@ describe.each(
     const txt = fs.readFileSync(`./tests/input/${f}.seqcode`, 'utf8');
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
-    const {svg,errors} = seqcode(txt, {fontFace: 'sans-serif'});
+    const {svg,errors} = seqcode(txt, {fontFamily: 'sans-serif'});
     if (errors) console.error(errors)
-    fs.writeFileSync(`./tests/output/${f}.svg`, svg, { encoding: 'utf8' })
+    fs.writeFileSync(`./tests/output/${f}.svg`, svg.svg(), { encoding: 'utf8' })
   })
 
 })
@@ -28,16 +28,16 @@ describe('from string', () => {
   test('test1', () => {
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
-    const {svg,errors} = seqcode("bob", {fontFace: 'sans-serif'});
+    const {svg,errors} = seqcode("bob", {fontFamily: 'sans-serif'});
     if (errors) console.error(errors)
-    fs.writeFileSync(`./tests/output/from-string-test1.svg`, svg, { encoding: 'utf8' })
+    fs.writeFileSync(`./tests/output/from-string-test1.svg`, svg.svg(), { encoding: 'utf8' })
   })
 
   test('create-width', () => {
     // test with sans-serif as we haven't loaded fonts into
     // svgdom which it would need to measure text
-    const {svg,errors} = seqcode("frame(x){me:actor\nb:Object\na:Object\na.test() { state(label) }\na.create()}", {fontFace: 'sans-serif'});
+    const {svg,errors} = seqcode("frame(x){me:actor\nb:Object\na:Object\na.test() { state(label) }\na.create()}", {fontFamily: 'sans-serif'});
     if (errors) console.error(errors)
-    fs.writeFileSync(`./tests/output/from-string-create-width.svg`, svg, { encoding: 'utf8' })
+    fs.writeFileSync(`./tests/output/from-string-create-width.svg`, svg.svg(), { encoding: 'utf8' })
   })
 })

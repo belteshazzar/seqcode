@@ -52,12 +52,12 @@ export class Graphics {
       .target("_blank")
     const text = link.plain("seqcode ") // space for size hack with font size
       .attr('text-anchor', ALIGN_RIGHT)
-      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
-      .fill({ color: this.config.linkColor })
+      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
+      .fill({ color: this.config.linkIconColor })
       .amove(w-this.config.fontSize*0.3,h-this.config.fontSize*0.3-3)
 
     // const icon = link.path("M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1")
-    //   .fill(this.config.linkColor)
+    //   .fill(this.config.linkIconColor)
     //   .size(this.config.fontSize,this.config.fontSize)
     //   .x(w-this.config.fontSize*1.2)
     //   .y(h-this.config.fontSize*1.2)
@@ -67,7 +67,7 @@ export class Graphics {
   };
 
   widthOf(str) {
-    const txt = this.svg.text(str).font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace });
+    const txt = this.svg.text(str).font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily });
     const w = txt.bbox().width
     txt.remove()
     return w
@@ -103,7 +103,7 @@ export class Graphics {
           .attr('y',y + h / 2)
           .attr('dominant-baseline', 'middle')
           .attr('text-anchor', 'middle')
-          .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+          .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
           .fill({ color: this.config.foreground })
       }
   }
@@ -116,12 +116,12 @@ export class Graphics {
     let g = this.svg.group()
     g.plain(str)
       .attr('text-anchor', align)
-      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
       .stroke({ color: this.config.background, width: 2 })
       .amove(this.dx + x, this.dy + y - (this.config.fontSize / 3))
     g.plain(str)
       .attr('text-anchor', align)
-      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+      .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
       .fill({ color: this.config.foreground })
       .amove(this.dx + x, this.dy + y - (this.config.fontSize / 3))
     return g;
@@ -194,13 +194,13 @@ export class Graphics {
         .attr('y',y + h / 2)
         .attr('dominant-baseline', 'middle')
         .attr('text-anchor', 'middle')
-        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
         .fill({ color: this.config.foreground })
     }
 
     if (link) {
       g.path("M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1")
-        .fill(this.config.linkColor)
+        .fill(this.config.linkIconColor)
         .x(x+w-this.config.fontSize-3)
         .y(y+h-this.config.fontSize-3)
         .size(this.config.fontSize,this.config.fontSize)
@@ -226,7 +226,7 @@ export class Graphics {
         .attr('y',y + h / 2)
         .attr('dominant-baseline', 'middle')
         .attr('text-anchor', 'middle')
-        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
         .fill({ color: this.config.foreground })
     }
   };
@@ -249,7 +249,7 @@ export class Graphics {
         .attr('y',y + h / 2)
         .attr('dominant-baseline', 'middle')
         .attr('text-anchor', 'middle')
-        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFace })
+        .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
         .fill({ color: this.config.foreground })
     }
 
@@ -370,7 +370,7 @@ export class Graphics {
 
     if (info.link) {
       g.path("M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16zM2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1")
-        .fill(this.config.linkColor)
+        .fill(this.config.linkIconColor)
         .move(info.x+info.w-this.config.fontSize-3,info.y+info.h-this.config.fontSize-3)
         .size(this.config.fontSize,this.config.fontSize)
     }

@@ -11,7 +11,7 @@ export default function (text,options) {
   const config = {
     fontWeight: 100,
     fontSize: 12,
-    fontFace: 'verdana',
+    fontFamily: 'verdana',
     foreground: "black",
     background: 'white',
     noteLight: '#FFFDA1',
@@ -19,11 +19,11 @@ export default function (text,options) {
     noteStroke: '#ccc',
     noteForeground: '#0000CD',
     noteFontWeight: 100,
-    noteFontSize: 14,
+    noteFontSize: 12,
     noteFontFace: 'verdana',
     fillLight: '#eee',
     fillDark: '#ddd',
-    linkColor: "#999",
+    linkIconColor: "#999",
     dashStyle: [8, 5],
     arrowSize: 7,
     margin: 30,
@@ -33,7 +33,7 @@ export default function (text,options) {
     linkHandler: {
       href: (link) => '#',
       target: (link) => '',
-      onclick: (link) => `alert(decodeURIComponent("${encodeURIComponent(link)}"))`
+      onclick: (link) => `alert(decodeURI("${encodeURI(link)}"))`
     },
   }
 
@@ -62,7 +62,7 @@ export default function (text,options) {
   config.svg.defs().plain(text).attr('id', 'seqcode')
 
   return {
-    svg: config.svg.svg(),
+    svg: config.svg,
     errors: ast.errors.length > 0 ? ast.errors : null
   };
 }
