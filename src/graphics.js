@@ -74,7 +74,7 @@ export class Graphics {
   };
 
   widthOfNote(str) {
-    const txt = this.svg.text(str).font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFace });
+    const txt = this.svg.text(str).font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFamily });
     const w = txt.bbox().width
     txt.remove()
     return w
@@ -363,7 +363,7 @@ export class Graphics {
     for (var i = 0; i < info.lines.length; i++) {
       g.plain(info.lines[i])
         .attr('text-anchor', ALIGN_LEFT)
-        .font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFace })
+        .font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFamily })
         .fill({ color: this.config.noteForeground })
         .amove(this.dx + info.x + pad, this.dy + info.y + pad + this.config.fontSize * lineSpacing * (i + 1) - (this.config.fontSize / 3))
     }

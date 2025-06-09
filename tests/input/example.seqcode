@@ -44,4 +44,4 @@ getCoffee( strong ) {
 }
 
 # notes are of the form note(x,y,width,message)
-note(270,20,300,seqcode - uml sequence diagrams automatically created from simple code)
+note(300,20,300,seqcode - UML sequence diagrams automatically translated from simple code.)

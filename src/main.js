@@ -20,7 +20,7 @@ export default function (text,options) {
     noteForeground: '#0000CD',
     noteFontWeight: 100,
     noteFontSize: 12,
-    noteFontFace: 'verdana',
+    noteFontFamily: 'verdana',
     fillLight: '#eee',
     fillDark: '#ddd',
     linkIconColor: "#999",

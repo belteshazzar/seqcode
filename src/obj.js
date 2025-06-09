@@ -124,18 +124,18 @@ export class Obj {
     return max + 1;
   };
 
-  hasCreationEvent(y1, y2) {
-    if (this.lifeEvents.length == 0) {
-      // no life events, gets created at y=0
-      return y1 == 0;
-    } else {
-      let hasCreation = false;
-      this.lifeEvents.forEach(function (ev) {
-        if (ev.event == OBJ_CREATED && ev.y >= y1 && ev.y <= y2) hasCreation = true;
-      });
-      return hasCreation;
-    }
-  };
+  // hasCreationEvent(y1, y2) {
+  //   if (this.lifeEvents.length == 0) {
+  //     // no life events, gets created at y=0
+  //     return y1 == 0;
+  //   } else {
+  //     let hasCreation = false;
+  //     this.lifeEvents.forEach(function (ev) {
+  //       if (ev.event == OBJ_CREATED && ev.y >= y1 && ev.y <= y2) hasCreation = true;
+  //     });
+  //     return hasCreation;
+  //   }
+  // };
 
   creationWidth(g) {
     if (this.cls == "actor") {
@@ -168,10 +168,8 @@ export class Obj {
       w = Math.max(w, this.leftFrameSpace(y));
     }
 
-    if (this.hasCreationEvent(y1, y2)) {
-      let _w = w
-      w = Math.max(w, this.creationWidth(g) / 2 + 10);
-    }
+    // creation always taken into account.
+    w = Math.max(w, this.creationWidth(g) / 2 + 10);
 
     const obj = this;
     this.labels.forEach(function (label, indx) {
@@ -214,15 +212,9 @@ export class Obj {
       w = Math.max(w, this.rightFrameSpace(y));
     }
 
-    // it will either have a creation event at the top, or
-    // further down which is more like a label
-    if (this.hasCreationEvent(y1, y2)) {
-      const _w = w
-      w = Math.max(w, this.creationWidth(g) / 2 + 10);
-    }
+    // creation always taken into account.
+    w = Math.max(w, this.creationWidth(g) / 2 + 10);
 
-    // invocations may not have a self message if them come from the left
-    // so at minimum we need to consider invocations on the right side
     w = w + 10 * (this.maxInvocationDepth(y1, y2) - 1);
 
     const obj = this;
@@ -238,13 +230,6 @@ export class Obj {
       w = Math.max(w, level * 10 + labelOverhang + obj.rightFrameSpace(indx)); // TODO: same as drawing
 
       //w = Math.max(w,level * 10 + Math.max(25,g.widthOf("{"+label.params+"}")/2) + obj.rightFrameSpace(indx)); // TODO: same as drawing
-    });
-
-    this.lifeEvents.forEach((ev) => {
-      if (ev.event == OBJ_CREATED && ev.y >= y1 && ev.y <= y2) {
-        const _w = w
-        w = Math.max(w, this.creationWidth(g) / 2 + 10);
-      }
     });
 
     this.selfMsgs.forEach(function (msg, indx) {
