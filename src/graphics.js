@@ -241,7 +241,7 @@ export class Graphics {
     g.rect(w, h)
       .move(x, y)
       // .radius(radius)
-      .fill({ color: 'rgba(255,255,255,0.8)' })
+      .fill({ color: this.config.background, opacity: 0.8 })
 
     if (t) {
       g.plain(t)
