@@ -2196,12 +2196,14 @@ export function graph(_objs, rootCall, g) {
     // work out sizes
     //objs.push();
     const dim = layout();
-    const diagramWidth = dim.w
+    const diagramWidth = Math.ceil(dim.w)
 
     dim.w = Math.max(dim.w, g.widthOf("seqcode--")*1.5)
     if (diagramFrame) {
       dim.w = Math.max(dim.w, g.widthOf(diagramFrame.params) + 30);
     }
+    dim.w = Math.ceil(dim.w)
+    dim.h = Math.ceil(dim.h)
 
     g.setSize(dim.w, dim.h); // Math.max(maxNoteY,y(maxY+2)));
     const svgWidth = dim.w
