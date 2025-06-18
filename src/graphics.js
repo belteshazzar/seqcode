@@ -46,7 +46,7 @@ export class Graphics {
     this.svg.viewbox(0, 0, w, h)
     this.svg.rect(w, h)
       .fill(this.config.background)
-      .stroke({ color: this.config.foreground, width: 1 });
+      //.stroke({ color: this.config.foreground, width: 1 });
 
     const link = this.svg.link("https://seqcode.app")
       .target("_blank")
