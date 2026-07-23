@@ -14,6 +14,10 @@ export class Graphics {
     this.textAnchor = "start";
     this.dx = 0
     this.dy = 0
+    // text measurement caches; font config is fixed per instance so the
+    // string alone is a sufficient key
+    this.widths = new Map()
+    this.noteWidths = new Map()
   }
 
   setTranslation(dx,dy) {
@@ -67,16 +71,24 @@ export class Graphics {
   };
 
   widthOf(str) {
-    const txt = this.svg.text(str).font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily });
-    const w = txt.bbox().width
-    txt.remove()
+    let w = this.widths.get(str)
+    if (w === undefined) {
+      const txt = this.svg.text(str).font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily });
+      w = txt.bbox().width
+      txt.remove()
+      this.widths.set(str, w)
+    }
     return w
   };
 
   widthOfNote(str) {
-    const txt = this.svg.text(str).font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFamily });
-    const w = txt.bbox().width
-    txt.remove()
+    let w = this.noteWidths.get(str)
+    if (w === undefined) {
+      const txt = this.svg.text(str).font({ size: this.config.noteFontSize, weight: this.config.noteFontWeight, family: this.config.noteFontFamily });
+      w = txt.bbox().width
+      txt.remove()
+      this.noteWidths.set(str, w)
+    }
     return w
   };
 
