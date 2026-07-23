@@ -13,8 +13,10 @@ export default defineConfig({
       formats: ['es'], // Output formats (ES module and UMD)
     },
     rollupOptions: {
-      // Externalize dependencies that shouldn't be bundled
-      external: [], // Add external dependencies if any
+      // svg.js must not be bundled: consumers (and the README's Node
+      // setup) call registerWindow on their own copy, which must be the
+      // same module instance the library draws with.
+      external: ['@svgdotjs/svg.js'],
       output: {
       }
     },
