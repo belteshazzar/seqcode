@@ -92,7 +92,9 @@ The linkHandler option is an object with the properties as per the table below. 
 
 ### Errors
 
-Errors returned are for information, SeqCode attempts to skip over errors and continue parsing the script.
+Errors returned are for information, SeqCode attempts to skip over errors and continue parsing the script. The `errors` array can contain two kinds of entries.
+
+Parse errors point at the offending token in the script:
 
 | Property | Type    | Description                                                            |
 | -------- | ------- | ---------------------------------------------------------------------- |
@@ -103,6 +105,14 @@ Errors returned are for information, SeqCode attempts to skip over errors and co
 | tok.str  | String  | The string/text value of the token.                                    |
 | expected | String  | Message describing what was expected instead of the token found.       |
 | id       | Integer | A unique id of the error that was raised, used for internal debugging. |
+
+Layout errors report an internal failure while laying out or drawing the diagram; the returned SVG contains whatever was drawn before the failure:
+
+| Property | Type    | Description                                                 |
+| -------- | ------- | ----------------------------------------------------------- |
+| internal | Boolean | Always true — distinguishes layout errors from parse errors. |
+| message  | String  | Description of the failure.                                 |
+| cause    | Error   | The underlying exception, when one was caught.              |
 
 ## Acknowledgements
 

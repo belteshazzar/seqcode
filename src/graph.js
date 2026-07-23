@@ -4,6 +4,7 @@
 
 import { Obj, OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
 import { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } from "./graphics.js";
+import { LayoutError } from "./layout_error.js";
 
 const DEBUG = false;
 
@@ -688,7 +689,9 @@ export function graph(_objs, rootCall, g) {
     var toX = objs[l.to.objIndex].x + WIDTH / 2 * l.to.level;
 
     if (isNaN(fromX) || isNaN(toX)) {
-      console.error(l.from.objIndex + "#" + l.from.level + ":" + fromX + " -> " + l.to.objIndex + "#" + l.to.level + ":" + toX);
+      errors.push(new LayoutError("line has non-numeric coordinates: "
+        + l.from.objIndex + "#" + l.from.level + ":" + fromX + " -> "
+        + l.to.objIndex + "#" + l.to.level + ":" + toX));
       return;
     }
     if (l.style == LOST) {
@@ -2166,6 +2169,7 @@ export function graph(_objs, rootCall, g) {
    }
 
   var diagramFrame = null;
+  var sized = false;
 
   init();
   try {
@@ -2202,6 +2206,7 @@ export function graph(_objs, rootCall, g) {
     dim.h = Math.ceil(dim.h)
 
     g.setSize(dim.w, dim.h); // Math.max(maxNoteY,y(maxY+2)));
+    sized = true;
     const svgWidth = dim.w
 
     if (svgWidth > diagramWidth) {
@@ -2215,10 +2220,16 @@ export function graph(_objs, rootCall, g) {
 
     if (diagramFrame != null) g.drawDiagramFrame(diagramFrame);
   } catch (e) {
-    console.error(e);
+    // best-effort rendering: report the failure to the caller but still
+    // return whatever was drawn before the crash
+    errors.push(new LayoutError("layout failed: " + (e && e.message ? e.message : e), e));
+    if (!sized) {
+      try {
+        g.setSize(g.margin() * 2, g.margin() * 2);
+      } catch (e2) {
+        // ignore: svg stays unsized
+      }
+    }
   }
-  if (errors.length > 0) {
-    console.error("errors:");
-    console.error(errors);
-  }
+  return errors;
 };

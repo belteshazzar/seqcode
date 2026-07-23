@@ -57,11 +57,13 @@ export default function (text,options) {
 
   const gfx = new Graphics(config);
 
-  graph(ast.objects, ast.rootCall, gfx);
+  const layoutErrors = graph(ast.objects, ast.rootCall, gfx);
   config.svg.defs().plain(text).attr('id', 'seqcode')
+
+  const errors = ast.errors.concat(layoutErrors);
 
   return {
     svg: config.svg,
-    errors: ast.errors.length > 0 ? ast.errors : null
+    errors: errors.length > 0 ? errors : null
   };
 }

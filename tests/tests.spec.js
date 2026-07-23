@@ -50,7 +50,9 @@ const EXPECTED_ERRORS = {
 function check(name, source) {
   const { svg, errors } = seqcode(source, { fontFamily: 'sans-serif' });
 
-  const actualErrors = (errors ?? []).map(e => ({ id: e.id, line: e.tok ? e.tok.line : null }));
+  const actualErrors = (errors ?? []).map(e => e.internal
+    ? { internal: true, message: e.message }
+    : { id: e.id, line: e.tok ? e.tok.line : null });
   expect(actualErrors).toEqual(EXPECTED_ERRORS[name] ?? []);
 
   const str = svg.svg();
