@@ -1,5 +1,5 @@
-/* (c) 2016 Daniel Walton (daniel@belteshazzar.com) (Unpublished)
- * All Rights Reserved.
+/* SeqCode - (c) Daniel Walton (daniel@belteshazzar.com)
+ * Licensed under the BSD 2-Clause License; see the LICENSE file.
  */
 
 export const ALIGN_LEFT = "start";
@@ -54,7 +54,7 @@ export class Graphics {
 
     const link = this.svg.link("https://seqcode.app")
       .target("_blank")
-    const text = link.plain("seqcode ") // space for size hack with font size
+    link.plain("seqcode ") // space for size hack with font size
       .attr('text-anchor', ALIGN_RIGHT)
       .font({ size: this.config.fontSize, weight: this.config.fontWeight, family: this.config.fontFamily })
       .fill({ color: this.config.linkIconColor })

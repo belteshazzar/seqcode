@@ -1,5 +1,5 @@
-/* (c) 2016 Daniel Walton (daniel@belteshazzar.com) (Unpublished)
- * All Rights Reserved.
+/* SeqCode - (c) Daniel Walton (daniel@belteshazzar.com)
+ * Licensed under the BSD 2-Clause License; see the LICENSE file.
  */
 
 import { OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
@@ -158,7 +158,6 @@ export function graph(_objs, rootCall, g) {
   function layoutObjects() {
 
     var prev = null;
-    var prevLeftWidth;
     var prevRightWidth;
     var obj = null;
     var objLeftWidth;
@@ -175,7 +174,6 @@ export function graph(_objs, rootCall, g) {
         obj.x = prev.x + prevRightWidth + g.objectSpacing() + objLeftWidth;
       }
       prev = obj;
-      prevLeftWidth = objLeftWidth;
       prevRightWidth = objRightWidth;
     }
 

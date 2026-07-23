@@ -1,5 +1,5 @@
-/* (c) 2016 Daniel Walton (daniel@belteshazzar.com) (Unpublished)
- * All Rights Reserved.
+/* SeqCode - (c) Daniel Walton (daniel@belteshazzar.com)
+ * Licensed under the BSD 2-Clause License; see the LICENSE file.
  */
 
 import { Call } from './call.js';
@@ -10,10 +10,6 @@ import { CLASSIFIER, BRACE_OPEN, BRACE_CLOSE, PARAMS, IDENT, CALL, SIGNAL } from
 
 export function parse(tokens) {
   var at = 0;
-
-  function push(tok) {
-    tokens.push(tok);
-  }
 
   function pop() {
     if (at == tokens.length) return null;
@@ -27,15 +23,6 @@ export function parse(tokens) {
   function peek() {
     if (at == tokens.length) return null;
     return tokens[at];
-  }
-
-  function peekNext() {
-    if (at + 1 == tokens.length) return null;
-    else return tokens[at + 1];
-  }
-
-  function reset() {
-    at = 0;
   }
 
   var errors = [];

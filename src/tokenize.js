@@ -1,5 +1,5 @@
-/* (c) 2016 Daniel Walton (daniel@belteshazzar.com) (Unpublished)
- * All Rights Reserved.
+/* SeqCode - (c) Daniel Walton (daniel@belteshazzar.com)
+ * Licensed under the BSD 2-Clause License; see the LICENSE file.
  */
 
 import {

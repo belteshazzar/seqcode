@@ -1,6 +1,6 @@
 
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
