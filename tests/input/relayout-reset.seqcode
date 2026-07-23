@@ -1,0 +1,10 @@
+# Regression: two deferred async signals to the same object, where the first
+# body messages an object further right. Layout inserts a Pause via check()
+# and re-lays-out, exercising the reset() path (which used to crash on an
+# undeclared `refs` variable).
+a.f() {
+	b > s1() {
+		c.x()
+	}
+	b > s2()
+}

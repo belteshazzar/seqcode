@@ -36,7 +36,6 @@ export function graph(_objs, rootCall, g) {
   var DEFER_ASYNC = true;
   var errors = [];
   var notes = [];
-  // var refs = [];
 
   function reset() {
     lines = [];
@@ -44,7 +43,6 @@ export function graph(_objs, rootCall, g) {
     maxY = 0;
     errors = [];
     notes = [];
-    refs = [];
 
     for (var i = 0; i < objs.length; i++) {
       objs[i].marks = [];
@@ -132,7 +130,6 @@ export function graph(_objs, rootCall, g) {
     //		labels = [];
     maxY = 0;
     notes = [];
-    // refs = [];
 
     for (var i = 0; i < objs.length; i++) {
       objs[i].objIndex = i; // does this overlap with call objIndex?
@@ -204,10 +201,10 @@ export function graph(_objs, rootCall, g) {
   function leftRight(oFrom, oTo, y) {
 
     if (oFrom == undefined || oTo == undefined || y == undefined) {
-      throw new Exception();
+      throw new Error("leftRight: missing argument (oFrom=" + oFrom + ", oTo=" + oTo + ", y=" + y + ")");
     }
     if (isNaN(oFrom.objIndex) || isNaN(oTo.objIndex) || isNaN(y)) {
-      throw new Exception();
+      throw new Error("leftRight: non-numeric argument (oFrom.objIndex=" + oFrom.objIndex + ", oTo.objIndex=" + oTo.objIndex + ", y=" + y + ")");
     }
     var l = Math.min(oFrom.objIndex, oTo.objIndex);
     var r = Math.max(oFrom.objIndex, oTo.objIndex);
@@ -1119,7 +1116,7 @@ export function graph(_objs, rootCall, g) {
       this.max = parent.objIndex;
     }
     text() {
-      throw "Pause.text";
+      throw new Error("Pause.text should never be called");
     }
     findMaxY() {
       return this.bottom;
@@ -1761,8 +1758,7 @@ export function graph(_objs, rootCall, g) {
       this.level = -1;
     }
     text() {
-      console.error(new Error().stack);
-      throw "MultiFrame.text";
+      throw new Error("MultiFrame.text should never be called");
     }
     check() {
       for (var i = 0; i < this.nodes.length; i++) {

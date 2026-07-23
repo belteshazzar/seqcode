@@ -37,7 +37,7 @@ export class Obj {
     if (!label.params) label.params = "";
 
     for (let y = label.top; y <= label.bottom; y++) {
-      if (this.labels[y]) throw "attempt to add label at location a label already exists";
+      if (this.labels[y]) throw new Error("attempt to add label at y=" + y + " where a label already exists");
       this.labels[y] = label;
     }
     this.bottom = Math.max(this.bottom, label.bottom);
