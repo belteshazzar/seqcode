@@ -243,7 +243,7 @@ export function graph(_objs, rootCall, g) {
     const rightFrames = objs[right].rightFrameDepth(top, top);
 
     f.layoutInfo.leftPadding = objs[left].getLeftWidth(g, top, bottom) - (leftFrames - 1) * FRAME_PADDING;
-    f.layoutInfo.rightPadding = objs[right].getRightWidth(g, top, bottom) - (rightFrames - 1) * FRAME_PADDING;;
+    f.layoutInfo.rightPadding = objs[right].getRightWidth(g, top, bottom) - (rightFrames - 1) * FRAME_PADDING;
 
     f.layoutInfo.yy = y(f.layoutInfo.top);
     f.layoutInfo.h = y(f.bottom) - f.layoutInfo.yy;
@@ -469,22 +469,6 @@ export function graph(_objs, rootCall, g) {
     return max;
   }
 
-  // function maxRight(x, y1, y2) {
-  //   var max = 0;
-  //   for (var i = 0; i < invocations.length; i++) {
-  //     var inv = invocations[i];
-  //     if (inv.objIndex != x) continue;
-  //     if (inv.top > y2) continue;
-  //     if (inv.bottom < y1) continue;
-  //     if (inv.objIndex == inv.parent.objIndex) {
-  //       max = Math.max(max, (inv.level + 2) * (WIDTH / 2));
-  //       max = Math.max(max, (inv.level) * (WIDTH / 2) + g.widthOf(inv.name + (inv.params ? "( " + inv.params + " )" : "")));
-  //     } else {
-  //       max = Math.max(max, (inv.level) * (WIDTH / 2));
-  //     }
-  //   }
-  //   return max;
-  // }
 
   function countInvocationsAt(x, y) {
     var n = 0;
@@ -498,16 +482,6 @@ export function graph(_objs, rootCall, g) {
     return n;
   }
 
-  // function labelWidth(l) {
-  //   if (l.name == "state") {
-  //     var radius = 15;
-  //     return g.widthOf(l.text ? l.text : "") + radius * 2;
-  //   } else if (l.name == "invariant") {
-  //     return g.widthOf("{" + (l.text ? l.text : "") + "}");
-  //   } else {
-  //     return 0;
-  //   }
-  // }
 
   function drawRef(r) {
 
@@ -731,12 +705,6 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-  // function text(str, x, yGrid) {
-  //   g.context.save();
-  //   g.context.fillStyle = "red";
-  //   g.text(str, objs[x].x, y(yGrid));
-  //   g.context.restore();
-  // }
 
   function sortInvocations() {
     // sort by objIndex's then top's
@@ -761,14 +729,6 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-  // function level(x, y) {
-  //   var count = 0;
-  //   for (var i = 0; i < invocations.length; i++) {
-  //     var inv = invocations[i];
-  //     if (inv.objIndex == x && inv.top <= y && (inv.bottom == undefined || inv.bottom >= y)) count++;
-  //   }
-  //   return count;
-  // }
 
   function drawInvocation(i) {
     var x = objs[i.objIndex].x + WIDTH / 2 * (i.level - 1);
@@ -789,28 +749,6 @@ export function graph(_objs, rootCall, g) {
     // g.strokeRect(x, yPx, w, h);
   }
 
-  //top==undefined means not layed out yet
-  //bottom==undefined means bottom not layed out yet
-  // function maxLevel(x, y) {
-  //   var max = -1;
-  //   for (var i = 0; i < invocations.length; i++) {
-  //     var inv = invocations[i];
-  //     if (inv.level == undefined) continue;
-  //     if (inv.objIndex != x) continue;
-  //     if (inv.top == undefined) continue;
-  //     if (inv.top > y) continue;
-  //     if (inv.bottom == undefined) {
-  //       max = Math.max(max, inv.level);
-  //     } else if (inv.bottom >= y) {
-  //       max = Math.max(max, inv.level);
-  //     }
-  //   }
-  //   return max;
-  // }
-
-  // function calcLevel(x, y) {
-  //   return maxLevel(x, y) + 1;
-  // }
 
   function countLinesUnder() {
     // find lines to/from right of this.objIndex between top and bottom

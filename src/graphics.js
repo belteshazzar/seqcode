@@ -519,28 +519,6 @@ export class Graphics {
       .stroke({ color: this.config.foreground, width: 1 });
   }
 
-  // addDiv(txt, x, y, w, h) {
-  //   if (!this.config.refCallback) return;
 
-  //   const div = document.createElement("div");
-  //   const config = this.config;
-  //   div.addEventListener('click', function () { config.refCallback(txt); });
-  //   div.style.position = 'absolute';
-  //   div.style.top = y + 'px';
-  //   div.style.left = x + 'px';
-  //   div.style.width = w + 'px';
-  //   div.style.height = h + 'px';
-  //   //	div.style.zIndex = 5;
-  //   div.style.cursor = 'pointer';
-  //   //	div.width = w;
-  //   //	div.height = h;
-
-  //   this.div.append(div);
-  // };
-
-  // getElement() {
-  //   if (this.config.refCallback) return this.div;
-  //   else return this.canvas;
-  // };
 
 }

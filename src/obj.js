@@ -124,18 +124,6 @@ export class Obj {
     return max + 1;
   };
 
-  // hasCreationEvent(y1, y2) {
-  //   if (this.lifeEvents.length == 0) {
-  //     // no life events, gets created at y=0
-  //     return y1 == 0;
-  //   } else {
-  //     let hasCreation = false;
-  //     this.lifeEvents.forEach(function (ev) {
-  //       if (ev.event == OBJ_CREATED && ev.y >= y1 && ev.y <= y2) hasCreation = true;
-  //     });
-  //     return hasCreation;
-  //   }
-  // };
 
   creationWidth(g) {
     if (this.cls == "actor") {
@@ -226,7 +214,7 @@ export class Obj {
       const invsWidth = level * 10;
       const labelWidth = Math.max(50, g.widthOf("{" + label.params + "}"));
       const minLabelWidth = Math.max(labelWidth, invsWidth + 30);
-      const labelOverhang = (minLabelWidth - invsWidth) / 2;;
+      const labelOverhang = (minLabelWidth - invsWidth) / 2;
       w = Math.max(w, level * 10 + labelOverhang + obj.rightFrameSpace(indx)); // TODO: same as drawing
 
       //w = Math.max(w,level * 10 + Math.max(25,g.widthOf("{"+label.params+"}")/2) + obj.rightFrameSpace(indx)); // TODO: same as drawing
