@@ -187,16 +187,32 @@ export function graph(_objs, rootCall, g) {
     return count;
   }
 
-  function mark(oFrom, oTo, y) {
+  // Find the first row >= y where n consecutive rows are free across the
+  // columns spanned by oFrom..oTo, mark them, and return the first row.
+  function markN(oFrom, oTo, y, n) {
     var lr = leftRight(oFrom, oTo, y);
-    while (marksAt(y, lr.l, lr.r) != 0) {
+    while (true) {
+      var free = true;
+      for (var i = 0; i < n; i++) {
+        if (marksAt(y + i, lr.l, lr.r) != 0) {
+          free = false;
+          break;
+        }
+      }
+      if (free) break;
       y++;
     }
     for (var x = lr.l; x <= lr.r; x++) {
-      objs[x].marks[y] = 'X';
+      for (var i = 0; i < n; i++) {
+        objs[x].marks[y + i] = 'X';
+      }
     }
-    if (y > maxY) maxY = y;
+    if (y + n - 1 > maxY) maxY = y + n - 1;
     return y;
+  }
+
+  function mark(oFrom, oTo, y) {
+    return markN(oFrom, oTo, y, 1);
   }
 
   function leftRight(oFrom, oTo, y) {
@@ -210,69 +226,6 @@ export function graph(_objs, rootCall, g) {
     var l = Math.min(oFrom.objIndex, oTo.objIndex);
     var r = Math.max(oFrom.objIndex, oTo.objIndex);
     return { l: l, r: r };
-  }
-
-  function mark2(oFrom, oTo, y) {
-    var lr = leftRight(oFrom, oTo, y);
-    while (true) {
-      if (marksAt(y, lr.l, lr.r) == 0) {
-        if (marksAt(y + 1, lr.l, lr.r) == 0) break;
-      }
-      y++;
-    }
-    var y1 = y + 1;
-    for (var x = lr.l; x <= lr.r; x++) {
-      objs[x].marks[y] = 'X';
-      objs[x].marks[y1] = 'X';
-    }
-    if (y1 > maxY) maxY = y1;
-    return y;
-  }
-
-  function mark3(oFrom, oTo, y) {
-    var lr = leftRight(oFrom, oTo, y);
-    while (true) {
-      if (marksAt(y, lr.l, lr.r) == 0) {
-        if (marksAt(y + 1, lr.l, lr.r) == 0) {
-          if (marksAt(y + 2, lr.l, lr.r) == 0) break;
-        }
-      }
-      y++;
-    }
-    var y1 = y + 1;
-    var y2 = y + 2;
-    for (var x = lr.l; x <= lr.r; x++) {
-      objs[x].marks[y] = 'X';
-      objs[x].marks[y1] = 'X';
-      objs[x].marks[y2] = 'X';
-    }
-    if (y2 > maxY) maxY = y2;
-    return y;
-  }
-
-  function mark4(oFrom, oTo, y) {
-    var lr = leftRight(oFrom, oTo, y);
-    while (true) {
-      if (marksAt(y, lr.l, lr.r) == 0) {
-        if (marksAt(y + 1, lr.l, lr.r) == 0) {
-          if (marksAt(y + 2, lr.l, lr.r) == 0) {
-            if (marksAt(y + 3, lr.l, lr.r) == 0) break;
-          }
-        }
-      }
-      y++;
-    }
-    var y1 = y + 1;
-    var y2 = y + 2;
-    var y3 = y + 3;
-    for (var x = lr.l; x <= lr.r; x++) {
-      objs[x].marks[y] = 'X';
-      objs[x].marks[y1] = 'X';
-      objs[x].marks[y2] = 'X';
-      objs[x].marks[y3] = 'X';
-    }
-    if (y3 > maxY) maxY = y3;
-    return y;
   }
 
   function layoutFrame(f) {
@@ -1092,7 +1045,7 @@ export function graph(_objs, rootCall, g) {
       return true;
     }
     layout(y) {
-      this.top = mark4(objs[this.min], objs[this.max], y);
+      this.top = markN(objs[this.min], objs[this.max], y, 4);
       this.bottom = this.top + 3;
       y = this.bottom + 1;
 
@@ -1846,7 +1799,7 @@ export function graph(_objs, rootCall, g) {
     layout(y) {
       var lineAt = -1;
       if (str(this.params)) {
-        this.top = mark2(objs[this.min], objs[this.max], y);
+        this.top = markN(objs[this.min], objs[this.max], y, 2);
         lineAt = this.top + 1;
         y = this.top + 2;
       } else {
@@ -1948,10 +1901,10 @@ export function graph(_objs, rootCall, g) {
       var lineAt = -1;
 
       if (!str(this.params)) {
-        this.top = mark2(objs[this.min], objs[this.max], y);
+        this.top = markN(objs[this.min], objs[this.max], y, 2);
         y = this.top + 2;
       } else {
-        this.top = mark3(objs[this.min], objs[this.max], y);
+        this.top = markN(objs[this.min], objs[this.max], y, 3);
         lineAt = this.top + 2;
         y = this.top + 3;
       }
@@ -2024,7 +1977,7 @@ export function graph(_objs, rootCall, g) {
     }
     layout(y) {
 
-      this.top = mark4(objs[this.objIndex], objs[this.objIndex], y);
+      this.top = markN(objs[this.objIndex], objs[this.objIndex], y, 4);
       this.bottom = this.top + 3;
       y = this.bottom + 1;
       objs[this.min].addLabel(this);
