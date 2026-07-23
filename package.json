@@ -17,11 +17,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.7",
     "path": "^0.12.7",
+    "svgdom": "^0.1.21",
     "vite": "^6.3.5",
     "vite-plugin-static-copy": "^2.3.1",
-    "vitest": "^3.1.2",
-    "svgdom": "^0.1.21"
+    "vitest": "^3.1.2"
   },
   "dependencies": {
     "@svgdotjs/svg.js": "^3.2.4"
