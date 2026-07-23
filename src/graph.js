@@ -836,6 +836,107 @@ export function graph(_objs, rootCall, g) {
     return results;
   };
 
+  // Base for everything that takes part in layout. Subclasses opt in to the
+  // shared behaviours: inheritFrameContext() for nodes that live inside their
+  // parent's frame context, extractReturns()/extractLater() for the trailing
+  // return(x)/later{} conventions, and layoutChildren() for the common
+  // child-layout loop with deferred async handling.
+  class LayoutNode {
+    constructor(parent, call) {
+      this.parent = parent;
+      if (call) {
+        this.name = call.name;
+        this.params = call.params;
+        this.objIndex = call.objIndex;
+      }
+    }
+    inheritFrameContext() {
+      this.frames = this.parent.frames;
+      this.inFrame = this.parent.inFrame;
+      this.labels = this.parent.labels;
+      this.lines = this.parent.lines;
+    }
+    computeMinMax() {
+      var mm = minmax(this);
+      this.min = mm.min;
+      this.max = mm.max;
+    }
+    // a trailing return(x) self message becomes the return value
+    extractReturns() {
+      if (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage) {
+          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
+            this.nodes.length--;
+            this.returns = last.params;
+          }
+        }
+      }
+    }
+    // trailing later{} blocks are pulled out of the flow and laid out
+    // after this node's parent completes
+    extractLater() {
+      this.later = [];
+      while (this.nodes.length > 0) {
+        var last = this.nodes[this.nodes.length - 1];
+        if (last instanceof SelfMessage
+          && last.name == "later"
+          && last.params === ""
+          && last.nodes.length > 0) {
+          this.nodes.length--;
+          last.islater = true;
+          this.later.unshift(last);
+          this.returns = last.params;
+        } else {
+          break;
+        }
+      }
+    }
+    layoutChildren(y, deferred) {
+      for (var i = 0; i < this.nodes.length; i++) {
+        var lo = this.nodes[i].layout(y);
+        if (typeof (lo) == "object") {
+          deferred.push(lo);
+          y = this.nodes[i].top;
+        } else {
+          y = lo;
+        }
+      }
+      return y;
+    }
+    text() {
+      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
+    }
+    check() {
+      if (!this.nodes) return true;
+      for (var i = 0; i < this.nodes.length; i++) {
+        if (!this.nodes[i].check()) return false;
+      }
+      return true;
+    }
+    findMaxY() {
+      var maxY = this.bottom;
+      if (this.nodes) {
+        for (var i = 0; i < this.nodes.length; i++) {
+          maxY = Math.max(maxY, this.nodes[i].findMaxY());
+        }
+      }
+      return maxY;
+    }
+  }
+
+  // Frames measure from their top when their bottom isn't final yet.
+  class ContainerNode extends LayoutNode {
+    findMaxY() {
+      if (this.bottom) return this.bottom;
+      var maxY = this.top;
+      for (var i = 0; i < this.nodes.length; i++) {
+        maxY = Math.max(maxY, this.nodes[i].findMaxY());
+      }
+      return maxY;
+    }
+  }
+
   class Note {
     constructor(call) {
       this.params = call.params;
@@ -871,25 +972,15 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class FoundMessage {
+  class FoundMessage extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
+      super(parent, call);
       this.min = this.objIndex;
       this.max = this.objIndex;
       objs[this.objIndex].alive = true;
     }
     text() {
       return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    check() {
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      return maxY;
     }
     layout(y) {
       this.top = mark(this.parent, this, y);
@@ -907,59 +998,19 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class Message {
+  class Message extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
+      super(parent, call);
+      this.inheritFrameContext();
       objs[this.objIndex].alive = true;
       this.nodes = createNodes(this, call.subCalls);
-      if (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage) {
-          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-            this.nodes.length--;
-            this.returns = last.params;
-          }
-        }
-      }
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
+      this.extractReturns();
+      this.extractLater();
+      this.computeMinMax();
     }
     check() {
-      // backwards
+      // a backwards message with lines crossing under it needs a Pause
+      // inserted before it and a re-layout
       if (this.parent.objIndex > this.objIndex) {
         var lines = countLinesUnder.call(this);
         if (lines.length > 0) {
@@ -969,18 +1020,9 @@ export function graph(_objs, rootCall, g) {
           while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
           this.parent.nodes.splice(me, 0, new Pause(this.parent));
           return false;
-        } else {
-          for (var i = 0; i < this.nodes.length; i++) {
-            if (!this.nodes[i].check()) return false;
-          }
-          return true;
         }
-      } else {
-        for (var i = 0; i < this.nodes.length; i++) {
-          if (!this.nodes[i].check()) return false;
-        }
-        return true;
       }
+      return super.check();
     }
     layout(y) {
       invocations.push(this);
@@ -988,23 +1030,13 @@ export function graph(_objs, rootCall, g) {
       var deferred = [];
       this.top = mark(this.parent, this, y);
       line(this.text(), this.parent, this, this.top, CALL);
-      y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else {
-          y = lo;
-        }
-      }
+      y = this.layoutChildren(this.top + 1, deferred);
       this.bottom = mark(this, this.parent, y);
       line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN);
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
       }
-      y = this.bottom + 1;
-      layoutLater(this, y);
+      layoutLater(this, this.bottom + 1);
       return this.bottom;
     }
   };
@@ -1016,11 +1048,9 @@ export function graph(_objs, rootCall, g) {
   ///////////////////////////////////////////
 
 
-  class RefMessage {
+  class RefMessage extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
+      super(parent, call);
       this.link = null;
       if (this.params) {
         let tl = g.textLink(this.params)
@@ -1030,19 +1060,9 @@ export function graph(_objs, rootCall, g) {
           this.link = tl.link
         }
       }
-      this.objIndex = call.objIndex;
       objs[this.objIndex].alive = true;
       this.min = Math.min(this.objIndex, parent.objIndex);
       this.max = Math.max(this.objIndex, parent.objIndex);
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    findMaxY() {
-      return this.bottom;
-    }
-    check() {
-      return true;
     }
     layout(y) {
       this.top = markN(objs[this.min], objs[this.max], y, 4);
@@ -1064,21 +1084,15 @@ export function graph(_objs, rootCall, g) {
 
 
   ///////////////////////////////////////////
-  class Pause {
+  class Pause extends LayoutNode {
     constructor(parent) {
-      this.parent = parent;
+      super(parent);
       this.objIndex = parent.objIndex;
       this.min = parent.objIndex;
       this.max = parent.objIndex;
     }
     text() {
       throw new Error("Pause.text should never be called");
-    }
-    findMaxY() {
-      return this.bottom;
-    }
-    check() {
-      return true;
     }
     layout(y) {
       this.top = mark(this, this, y);
@@ -1091,61 +1105,15 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class SelfMessage {
+  class SelfMessage extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
+      super(parent, call);
+      this.inheritFrameContext();
       objs[this.objIndex].alive = true;
       this.nodes = createNodes(this, call.subCalls);
-      if (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage) {
-          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-            this.nodes.length--;
-            this.returns = last.params;
-          }
-        }
-      }
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
+      this.extractReturns();
+      this.extractLater();
+      this.computeMinMax();
     }
     layout(y) {
       invocations.push(this);
@@ -1161,14 +1129,7 @@ export function graph(_objs, rootCall, g) {
 
       objs[this.objIndex].addSelfMessage(this);
 
-      y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      y = this.layoutChildren(this.top + 1, deferred);
       this.bottom = mark(this, this, y);
       if (!this.islater) {
         this.msgBottom = mark(this.parent, this, this.bottom);
@@ -1179,7 +1140,6 @@ export function graph(_objs, rootCall, g) {
       }
       if (this.islater) y = this.bottom + 1;
       else y = this.bottom + 3;
-      //if (!this.islater) 
       layoutLater(this, y);
       return this.bottom;
     }
@@ -1194,75 +1154,26 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class Root {
+  class Root extends LayoutNode {
     constructor(call) {
-      this.parent = { objIndex: 0 };
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
+      super({ objIndex: 0 }, call);
       this.frames = [];
       this.inFrame = false;
       this.labels = [];
       this.lines = [];
       objs[this.objIndex].alive = true;
       this.nodes = createNodes(this, call.subCalls);
-      if (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage) {
-          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-            this.nodes.length--;
-            this.returns = last.params;
-          }
-        }
-      }
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.extractReturns();
+      this.extractLater();
+      this.computeMinMax();
       this.level = 0;
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
     }
     layout(y) {
       invocations.push(this);
       objs[this.objIndex].addInvocation(this);
       this.top = mark(this.parent, this, y);
       var deferred = [];
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      y = this.layoutChildren(y, deferred);
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
       }
@@ -1278,25 +1189,15 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class LostMessage {
+  class LostMessage extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
+      super(parent, call);
       this.min = this.objIndex;
       this.max = this.objIndex;
       objs[this.objIndex].alive = true;
     }
     text() {
       return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    check() {
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      return maxY;
     }
     layout(y) {
       this.top = mark(this.parent, this, y);
@@ -1311,36 +1212,14 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class AsynchMessage {
+  class AsynchMessage extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
+      super(parent, call);
+      this.inheritFrameContext();
       objs[this.objIndex].alive = true;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
       this.nodes = createNodes(this, call.subCalls);
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.extractLater();
+      this.computeMinMax();
     }
     check() {
 
@@ -1354,12 +1233,8 @@ export function graph(_objs, rootCall, g) {
           while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
           this.parent.nodes.splice(me, 0, new Pause(this.parent));
           return false;
-        } else {
-          for (var i = 0; i < this.nodes.length; i++) {
-            if (!this.nodes[i].check()) return false;
-          }
-          return true;
         }
+        return super.check();
       } else {
         var lines = countLinesUnder.call(this);
         if (lines.length > 0) {
@@ -1377,16 +1252,9 @@ export function graph(_objs, rootCall, g) {
             }
           }
           return false;
-        } else {
-          for (var i = 0; i < this.nodes.length; i++) {
-            if (!this.nodes[i].check()) return false;
-          }
-          return true;
         }
+        return super.check();
       }
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
     }
     layout(y) {
       this.done = false;
@@ -1406,31 +1274,16 @@ export function graph(_objs, rootCall, g) {
         return this;
       }
     }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
-    }
     deferredLayout() {
       if (!this.done) this.done = true;
       else return;
       var deferred = [];
-      var y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      var y = this.layoutChildren(this.top + 1, deferred);
       this.bottom = mark(this, this, y);
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
       }
-      y = this.bottom + 1;
-      layoutLater(this, y);
+      layoutLater(this, this.bottom + 1);
       return this.top;
     }
   };
@@ -1440,46 +1293,14 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class AsynchSelfMessage {
+  class AsynchSelfMessage extends LayoutNode {
     constructor(parent, call) {
-
-      this.parent = parent;
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
+      super(parent, call);
+      this.inheritFrameContext();
       objs[this.objIndex].alive = true;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
       this.nodes = createNodes(this, call.subCalls);
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
+      this.extractLater();
+      this.computeMinMax();
     }
     layout(y) {
       this.done = false;
@@ -1497,35 +1318,18 @@ export function graph(_objs, rootCall, g) {
 
       line(this.text(), this.parent, this, this.msgTop, ASYNCH);
       objs[this.objIndex].pendingAsynch = this;
-      //if (DEFER_ASYNC) return this;
-      //else 
       return this.deferredLayout();
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
     }
     deferredLayout() {
       if (!this.done) this.done = true;
       else return;
       var deferred = [];
-      var y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      var y = this.layoutChildren(this.top + 1, deferred);
       this.bottom = mark(this.parent, this, y);
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
       }
-      y = this.bottom + 1;
-      layoutLater(this, y);
+      layoutLater(this, this.bottom + 1);
       return this.top;
     }
   };
@@ -1535,57 +1339,23 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class Create {
+  class Create extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.objIndex = call.objIndex;
+      super(parent, call);
+      this.inheritFrameContext();
       objs[this.objIndex].alive = true;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
       this.nodes = createNodes(this, call.subCalls);
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.extractLater();
+      this.computeMinMax();
     }
     text() {
       return (this.error ? "create" : "<<create>>");
     }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
-    }
     layout(y) {
       var deferred = [];
       this.top = mark(this.parent, this, y);
-      this.error = (countInvocationsAt(this.objIndex, this.top) > 0); // || objs[this.objIndex].alive===true);
+      this.error = (countInvocationsAt(this.objIndex, this.top) > 0);
 
-      //		objs[this.objIndex].alive = true;
       invocations.push(this);
       objs[this.objIndex].addInvocation(this);
       if (!this.error) {
@@ -1597,14 +1367,7 @@ export function graph(_objs, rootCall, g) {
         }
       }
       line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
-      y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      y = this.layoutChildren(this.top + 1, deferred);
       this.bottom = mark(this.parent, this, y);
       if (!this.error) {
         objs[this.objIndex].addLifeEvent({ event: OBJ_CREATED, y: this.top });
@@ -1615,8 +1378,7 @@ export function graph(_objs, rootCall, g) {
       if (this.error) {
         line("", this, this.parent, this.bottom, RETURN);
       }
-      y = this.bottom + 1;
-      layoutLater(this, y);
+      layoutLater(this, this.bottom + 1);
       return this.bottom;
     }
   };
@@ -1624,51 +1386,25 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class Destroy {
+  class Destroy extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.objIndex = call.objIndex;
+      super(parent, call);
+      this.inheritFrameContext();
       objs[this.objIndex].alive = false;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
       this.nodes = createNodes(this, call.subCalls);
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.computeMinMax();
     }
     text() {
       return (this.error ? "destroy" : "<<destroy>>");
     }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
-    }
     layout(y) {
       var deferred = [];
       this.top = mark(this.parent, this, y);
-      this.error = (countInvocationsAt(this.objIndex, this.top) > 0); // || objs[this.objIndex].alive===false);
+      this.error = (countInvocationsAt(this.objIndex, this.top) > 0);
       invocations.push(this);
       objs[this.objIndex].addInvocation(this);
       line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
-      y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      y = this.layoutChildren(this.top + 1, deferred);
       this.bottom = mark(this, this, y);
       if (!this.error) {
         this.cross = mark(this, this, this.bottom);
@@ -1690,9 +1426,9 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class MultiFrame {
+  class MultiFrame extends ContainerNode {
     constructor(parent, parts) {
-      this.parent = parent;
+      super(parent);
       this.parent.frames.push(this);
       this.frames = [];
       this.inFrame = true;
@@ -1704,9 +1440,7 @@ export function graph(_objs, rootCall, g) {
       for (var i = 0; i < parts.length; i++) {
         this.nodes.push(new MultiFramePart(this, parts[i]));
       }
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.computeMinMax();
       for (var i = 0; i < this.nodes.length; i++) {
         this.nodes[i].min = this.min;
         this.nodes[i].max = this.max;
@@ -1715,20 +1449,6 @@ export function graph(_objs, rootCall, g) {
     }
     text() {
       throw new Error("MultiFrame.text should never be called");
-    }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      if (this.bottom) return this.bottom;
-      var maxY = this.top;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
     }
     layout(y) {
       var deferred = [];
@@ -1755,46 +1475,17 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class MultiFramePart {
+  class MultiFramePart extends ContainerNode {
     constructor(parent, call) {
-      this.parent = parent;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
+      super(parent, call);
+      this.inheritFrameContext();
       this.nodes = createNodes(this, call.subCalls);
-
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.extractLater();
+      this.computeMinMax();
       this.level = -1;
     }
     text() {
       return this.params === null ? "" : "[ " + this.params + " ]";
-    }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
     }
     layout(y) {
       var lineAt = -1;
@@ -1807,13 +1498,7 @@ export function graph(_objs, rootCall, g) {
         y = this.top + 1;
       }
       var deferred = [];
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      y = this.layoutChildren(y, deferred);
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
       }
@@ -1831,70 +1516,27 @@ export function graph(_objs, rootCall, g) {
       layoutLater(this, this.bottom + 1);
       return this.bottom;
     }
-    findMaxY() {
-      if (this.bottom) return this.bottom;
-      var maxY = this.top;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
-    }
   };
 
 
 
 
 
-  class Frame {
+  class Frame extends ContainerNode {
     constructor(parent, call) {
-      this.parent = parent;
+      super(parent, call);
       this.parent.frames.push(this);
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
       this.frames = [];
       this.inFrame = true;
       this.labels = [];
       this.lines = [];
       this.nodes = createNodes(this, call.subCalls);
-
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.extractLater();
+      this.computeMinMax();
       this.level = -1;
     }
     text() {
       return this.params === null ? "" : "[ " + this.params + " ]";
-    }
-    check() {
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      if (this.bottom) return this.bottom;
-      var maxY = this.top;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
     }
     layout(y) {
       var deferred = [];
@@ -1908,13 +1550,7 @@ export function graph(_objs, rootCall, g) {
         lineAt = this.top + 2;
         y = this.top + 3;
       }
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else y = lo;
-      }
+      y = this.layoutChildren(y, deferred);
       for (var i = 0; i < deferred.length; i++) {
         deferred[i].deferredLayout();
       }
@@ -1944,13 +1580,10 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class RefLabel {
+  class RefLabel extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
+      super(parent, call);
       this.parent.labels.push(this);
-      this.name = call.name;
-      this.params = call.params;
-      this.params = call.params;
       this.link = null;
       if (this.params) {
         let tl = g.textLink(this.params)
@@ -1961,19 +1594,12 @@ export function graph(_objs, rootCall, g) {
         }
       }
 
-      this.objIndex = call.objIndex;
       this.min = this.objIndex;
       this.max = this.objIndex;
       this.level = -1;
     }
     text() {
       return this.params === null ? "" : "[ " + this.params + " ]";
-    }
-    check() {
-      return true;
-    }
-    findMaxY() {
-      if (this.bottom) return this.bottom;
     }
     layout(y) {
 
@@ -1991,25 +1617,17 @@ export function graph(_objs, rootCall, g) {
 
 
 
-  class Label {
+  class Label extends LayoutNode {
     constructor(parent, call) {
-      this.parent = parent;
+      super(parent, call);
       this.parent.labels.push(this);
-      this.name = call.name;
-      this.params = call.params;
-      this.objIndex = call.objIndex;
       objs[this.objIndex].alive = true;
       this.nodes = [];
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
+      this.computeMinMax();
       this.level = parent.level;
     }
     text() {
       return this.name + (this.params === null ? "" : "( " + this.params + " )");
-    }
-    check() {
-      return true;
     }
     layout(y) {
       var left = { objIndex: this.objIndex };
@@ -2024,9 +1642,6 @@ export function graph(_objs, rootCall, g) {
 
       objs[this.objIndex].addLabel(this);
 
-      return this.bottom;
-    }
-    findMaxY() {
       return this.bottom;
     }
   };
