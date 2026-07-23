@@ -2,48 +2,35 @@
  * All Rights Reserved.
  */
 
-import { Obj, OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
+import { OBJ_CREATED, OBJ_DESTROYED } from "./obj.js";
 import { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } from "./graphics.js";
 import { LayoutError } from "./layout_error.js";
+import { MarkGrid } from "./layout/grid.js";
+import { buildNodes } from "./layout/nodes.js";
+import { LOST, FOUND, HIDDEN, REF, WIDTH, str } from "./layout/consts.js";
 
 const DEBUG = false;
 
 export function graph(_objs, rootCall, g) {
 
-  function minmax(node) {
-    var min = Math.min(node.parent.objIndex, node.objIndex);
-    var max = Math.max(node.parent.objIndex, node.objIndex);
-
-    for (var i = 0; i < node.nodes.length; i++) {
-      min = Math.min(min, node.nodes[i].min);
-      max = Math.max(max, node.nodes[i].max);
-    }
-
-    if (node.later) {
-      for (var i = 0; i < node.later.length; i++) {
-        min = Math.min(min, node.later[i].min);
-        max = Math.max(max, node.later[i].max);
-      }
-    }
-
-    return { min: min, max: max };
-  }
+  const objs = _objs;
+  const lines = [];
+  const invocations = [];
+  const notes = [];
+  const grid = new MarkGrid(objs);
+  const N = buildNodes({ objs, grid, lines, invocations, notes, g });
 
   var root = null;
-  var objs = null;
-  var lines = null;
-  var invocations = null;
-  var maxY = 0;
-  var DEFER_ASYNC = true;
   var errors = [];
-  var notes = [];
+  var diagramFrame = null;
+  var sized = false;
 
   function reset() {
-    lines = [];
-    invocations = [];
-    maxY = 0;
+    lines.length = 0;
+    invocations.length = 0;
+    grid.maxY = 0;
     errors = [];
-    notes = [];
+    notes.length = 0;
 
     for (var i = 0; i < objs.length; i++) {
       objs[i].marks = [];
@@ -73,10 +60,10 @@ export function graph(_objs, rootCall, g) {
         }
 
         if (this.lifeEvents[this.lifeEvents.length - 1].event == OBJ_CREATED && createdAt != -1) {
-          g.dashedLine(this.x, y(createdAt) + g.rowSpacing() / 2, this.x, y(maxY + 1));
+          g.dashedLine(this.x, y(createdAt) + g.rowSpacing() / 2, this.x, y(grid.maxY + 1));
         }
       } else {
-        g.dashedLine(this.x, y(0) + g.rowSpacing() / 2, this.x, y(maxY + 1));
+        g.dashedLine(this.x, y(0) + g.rowSpacing() / 2, this.x, y(grid.maxY + 1));
       }
     }
 
@@ -124,14 +111,6 @@ export function graph(_objs, rootCall, g) {
       }
     }
 
-    objs = _objs;
-    lines = [];
-    invocations = [];
-    //		frames = [];
-    //		labels = [];
-    maxY = 0;
-    notes = [];
-
     for (var i = 0; i < objs.length; i++) {
       objs[i].objIndex = i; // does this overlap with call objIndex?
       objs[i].marks = [];
@@ -142,90 +121,6 @@ export function graph(_objs, rootCall, g) {
       objs[i].drawObjs = drawObjs;
       objs[i].pendingAsynch = null;
     }
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-  //
-  function layoutLater(inv, y) {
-
-    if (inv.later) {
-      objs[inv.objIndex].later = objs[inv.objIndex].later.concat(inv.later);
-      inv.later = null;
-    }
-
-    if (inv.inFrame) {
-      return;
-    }
-
-    for (let i = 0; i < objs.length; i++) {
-      layoutObjLater(i, y);
-    }
-  }
-
-  function layoutObjLater(objIndex, y) {
-    var x = 1000;
-    while (x > 0 && objs[objIndex].later.length > 0) {
-      x--;
-      var invocations = countInvocationsAt(objIndex, y);
-      if (invocations > 0) {
-        y++;
-      } else {
-        var later = objs[objIndex].later.shift();
-        y = later.layout(y);
-      }
-    }
-  }
-
-  function marksAt(y, x1, x2) {
-
-    var count = 0;
-    var left = Math.min(x1, x2);
-    var right = Math.max(x1, x2);
-    for (var x = left; x <= right; x++) {
-      if (objs[x].marks[y] == 'X') count++;
-    }
-    return count;
-  }
-
-  // Find the first row >= y where n consecutive rows are free across the
-  // columns spanned by oFrom..oTo, mark them, and return the first row.
-  function markN(oFrom, oTo, y, n) {
-    var lr = leftRight(oFrom, oTo, y);
-    while (true) {
-      var free = true;
-      for (var i = 0; i < n; i++) {
-        if (marksAt(y + i, lr.l, lr.r) != 0) {
-          free = false;
-          break;
-        }
-      }
-      if (free) break;
-      y++;
-    }
-    for (var x = lr.l; x <= lr.r; x++) {
-      for (var i = 0; i < n; i++) {
-        objs[x].marks[y + i] = 'X';
-      }
-    }
-    if (y + n - 1 > maxY) maxY = y + n - 1;
-    return y;
-  }
-
-  function mark(oFrom, oTo, y) {
-    return markN(oFrom, oTo, y, 1);
-  }
-
-  function leftRight(oFrom, oTo, y) {
-
-    if (oFrom == undefined || oTo == undefined || y == undefined) {
-      throw new Error("leftRight: missing argument (oFrom=" + oFrom + ", oTo=" + oTo + ", y=" + y + ")");
-    }
-    if (isNaN(oFrom.objIndex) || isNaN(oTo.objIndex) || isNaN(y)) {
-      throw new Error("leftRight: non-numeric argument (oFrom.objIndex=" + oFrom.objIndex + ", oTo.objIndex=" + oTo.objIndex + ", y=" + y + ")");
-    }
-    var l = Math.min(oFrom.objIndex, oTo.objIndex);
-    var r = Math.max(oFrom.objIndex, oTo.objIndex);
-    return { l: l, r: r };
   }
 
   function layoutFrame(f) {
@@ -331,13 +226,11 @@ export function graph(_objs, rootCall, g) {
       if (!l.style[0] && !l.style[1] && l.text == "<<create>>") {
         var toObj = objs[l.to.objIndex];
         var objExtra = Math.ceil(g.widthOf(toObj.getText()) / 2);
-        /////
         if (toObj.cls == "actor") objExtra = Math.max(g.widthOf(toObj.getText()) / 2, 10);
         else if (toObj.cls == "control" || toObj.cls == "boundary" || toObj.cls == "entity") objExtra = Math.max(g.widthOf(toObj.getText()) / 2, 20);
         if (l.to.objIndex > l.from.objIndex) {
           if (toObj.cls == "boundary") objExtra += 5;
         }
-        ////////
         extra = Math.ceil(textLength - currentObjSpacing + g.arrowSize() * 2 + objExtra);
       } else if (l.style == LOST) {
         extra = Math.ceil(textLength - currentObjSpacing + g.arrowSize() * 2 + WIDTH * 2);
@@ -374,7 +267,7 @@ export function graph(_objs, rootCall, g) {
 
   function layout() {
 
-    let dim = { w: 0, h: y(maxY + 2) };
+    let dim = { w: 0, h: y(grid.maxY + 2) };
     dim = extentsOf(dim, layoutNotes());
     dim.w = Math.max(dim.w, layoutObjects());
     layoutLines();
@@ -421,40 +314,8 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-  // call = SOLID CLOSED
-  var CALL = [true, true];
-  // return = DASHED OPEN
-  var RETURN = [false, false];
-  // asynch = SOLID OPEN
-  var ASYNCH = [true, false];
-  // life = DASHED OPEN
-  var LIFE = [false, false];
-  // lost = SOLID OPEN
-  var LOST = [true, false];
-  // lost = SOLID OPEN
-  var FOUND = [true, false];
-
-  var HIDDEN = [false, false];
-  var REF = [false, false];
-
-  // invocation width
-  var WIDTH = 20;
-
-  function line(text, from, to, y, style, meta) {
-    const ln = { text: text, from: from, to: to, y: y, style: style, meta: meta };
-    lines.push(ln);
-    if (from.lines) from.lines.push(ln);
-  }
-
   function y(ygrid) {
     return g.margin() + g.rowSpacing() * (ygrid + (diagramFrame ? 2 : 1));
-  }
-
-  function str(s) {
-    if (s == undefined || s == null) return false;
-    s = s.trim();
-    if (s.length == 0) return false;
-    return s;
   }
 
   function maxLevelRange(x, y1, y2) {
@@ -468,20 +329,6 @@ export function graph(_objs, rootCall, g) {
     }
     return max;
   }
-
-
-  function countInvocationsAt(x, y) {
-    var n = 0;
-    for (var i = 0; i < invocations.length; i++) {
-      var inv = invocations[i];
-      if (inv.objIndex != x) continue;
-      if (inv.top > y) continue;
-      if (inv.bottom < y) continue;
-      n++;
-    }
-    return n;
-  }
-
 
   function drawRef(r) {
 
@@ -519,15 +366,8 @@ export function graph(_objs, rootCall, g) {
     const xl = c - w2;
 
     g.fillRect(xl, y(top), w, y(bottom) - y(top),text,link);
-//    g.strokeRect(xl, y(top), w, y(bottom) - y(top));
-
-//    g.addDiv(text, xl, y(top), w, y(bottom) - y(top));
 
     g.frameLabel(xl,y(top),tw+15,y(top+1)-y(top),"ref")
-
-    // g.text("ref", xl + 5, y(top + 1) - g.config.fontSize,ALIGN_LEFT);
-
-//    g.text(text, c, y(top + 2) - g.config.fontSize,ALIGN_CENTER);
   }
 
   function drawLabel(r) {
@@ -545,9 +385,6 @@ export function graph(_objs, rootCall, g) {
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
       g.roundRect(left, y(r.top), w, y(r.bottom) - y(r.top), radius, r.text);
-      // if (r.text) {
-      //   g.text(r.text, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
-      // }
     } else if (r.name == "invariant") {
       const invs = objs[r.x].maxInvocationDepth(r.top, r.top);
       var objX = objs[r.x].x + (invs - 1) * 5;
@@ -556,21 +393,7 @@ export function graph(_objs, rootCall, g) {
       const w = Math.max(invs * 10 + 30, Math.max(50, g.widthOf(r.text) + radius * 2));
       var left = Math.ceil(objX - w / 2);
       g.transparentRect(left, y(r.top), w, y(r.bottom) - y(r.top), txt);
-      // g.text(txt, objX, y(r.top) + g.config.rowSpacing / 2 + g.config.fontSize - 2,ALIGN_CENTER);
     }
-  }
-
-  function frameTextWidth(f) {
-    var maxTextWidth = g.widthOf(f.name) + 20;
-    if (str(f.params)) {
-      maxTextWidth = Math.max(maxTextWidth, g.widthOf("[ " + f.params + " ]") + 20);
-    }
-    if (f.layoutInfo.splits) {
-      for (var i = 0; i < f.layoutInfo.splits.length; i++) {
-        maxTextWidth = Math.max(maxTextWidth, g.widthOf("[ " + f.layoutInfo.splits[i].text + " ]") + 20);
-      }
-    }
-    return maxTextWidth;
   }
 
   function drawFrame(f) {
@@ -597,7 +420,6 @@ export function graph(_objs, rootCall, g) {
 
     g.frameLabel(xx,yy,tw+15,y(f.top+1)-yy, f.name)
 
-    // g.text(f.name, xx + 5, y(f.top + 1) - g.config.fontSize,ALIGN_LEFT);
     if (str(f.params)) g.text("[ " + f.params + " ]", xx + 5, y(f.top + 2),ALIGN_LEFT);
   }
 
@@ -705,7 +527,6 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-
   function sortInvocations() {
     // sort by objIndex's then top's
     invocations.sort(function (a, b) {
@@ -729,14 +550,13 @@ export function graph(_objs, rootCall, g) {
     }
   }
 
-
   function drawInvocation(i) {
     var x = objs[i.objIndex].x + WIDTH / 2 * (i.level - 1);
     var yPx = y(i.top);
     var w = WIDTH;
     var h = y(i.bottom) - yPx;
     var cls = objs[i.objIndex].cls;
-    if (i.constructor == Create
+    if (i instanceof N.Create
       && !i.error
       && (cls == "actor"
         || cls == "boundary"
@@ -746,936 +566,21 @@ export function graph(_objs, rootCall, g) {
       h -= g.rowSpacing() / 2;
     }
     g.fillRect(x, yPx, w, h);
-    // g.strokeRect(x, yPx, w, h);
   }
 
-
-  function countLinesUnder() {
-    // find lines to/from right of this.objIndex between top and bottom
-    var results = [];
-    for (var i = 0; i < lines.length; i++) {
-      var ln = lines[i];
-      if (ln.style == HIDDEN || ln.style == REF) continue;
-      if (ln.y <= this.top) continue;
-      if (ln.y >= this.bottom) continue;
-      if (ln.to.objIndex == this.objIndex && ln.from.objIndex > this.objIndex) {
-        if (ln.to.level >= this.level) continue;
-        if (ln.to.level == -1) continue // frame line
-        results.push(ln);
-        continue;
-      }
-      if (ln.from.objIndex == this.objIndex && ln.to.objIndex > this.objIndex) {
-        if (ln.from.level >= this.level) continue;
-        if (ln.from.level == -1) continue // frame line
-        results.push(ln);
-        continue
-      }
+  function drawYs() {
+    for (let i = 0; i <= grid.maxY; i++) {
+      g.text(i, 3, y(i),ALIGN_LEFT)
     }
-    return results;
-  };
-
-  // Base for everything that takes part in layout. Subclasses opt in to the
-  // shared behaviours: inheritFrameContext() for nodes that live inside their
-  // parent's frame context, extractReturns()/extractLater() for the trailing
-  // return(x)/later{} conventions, and layoutChildren() for the common
-  // child-layout loop with deferred async handling.
-  class LayoutNode {
-    constructor(parent, call) {
-      this.parent = parent;
-      if (call) {
-        this.name = call.name;
-        this.params = call.params;
-        this.objIndex = call.objIndex;
-      }
-    }
-    inheritFrameContext() {
-      this.frames = this.parent.frames;
-      this.inFrame = this.parent.inFrame;
-      this.labels = this.parent.labels;
-      this.lines = this.parent.lines;
-    }
-    computeMinMax() {
-      var mm = minmax(this);
-      this.min = mm.min;
-      this.max = mm.max;
-    }
-    // a trailing return(x) self message becomes the return value
-    extractReturns() {
-      if (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage) {
-          if (last.name == "return" && last.params != null && last.nodes.length == 0) {
-            this.nodes.length--;
-            this.returns = last.params;
-          }
-        }
-      }
-    }
-    // trailing later{} blocks are pulled out of the flow and laid out
-    // after this node's parent completes
-    extractLater() {
-      this.later = [];
-      while (this.nodes.length > 0) {
-        var last = this.nodes[this.nodes.length - 1];
-        if (last instanceof SelfMessage
-          && last.name == "later"
-          && last.params === ""
-          && last.nodes.length > 0) {
-          this.nodes.length--;
-          last.islater = true;
-          this.later.unshift(last);
-          this.returns = last.params;
-        } else {
-          break;
-        }
-      }
-    }
-    layoutChildren(y, deferred) {
-      for (var i = 0; i < this.nodes.length; i++) {
-        var lo = this.nodes[i].layout(y);
-        if (typeof (lo) == "object") {
-          deferred.push(lo);
-          y = this.nodes[i].top;
-        } else {
-          y = lo;
-        }
-      }
-      return y;
-    }
-    text() {
-      return this.name + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    check() {
-      if (!this.nodes) return true;
-      for (var i = 0; i < this.nodes.length; i++) {
-        if (!this.nodes[i].check()) return false;
-      }
-      return true;
-    }
-    findMaxY() {
-      var maxY = this.bottom;
-      if (this.nodes) {
-        for (var i = 0; i < this.nodes.length; i++) {
-          maxY = Math.max(maxY, this.nodes[i].findMaxY());
-        }
-      }
-      return maxY;
-    }
-  }
-
-  // Frames measure from their top when their bottom isn't final yet.
-  class ContainerNode extends LayoutNode {
-    findMaxY() {
-      if (this.bottom) return this.bottom;
-      var maxY = this.top;
-      for (var i = 0; i < this.nodes.length; i++) {
-        maxY = Math.max(maxY, this.nodes[i].findMaxY());
-      }
-      return maxY;
-    }
-  }
-
-  class Note {
-    constructor(call) {
-      this.params = call.params;
-    }
-    layout() {
-      const parsed = Note.parseParams(this.params)
-      this.info = g.layoutNote(parsed.x, parsed.y, parsed.w, parsed.text);
-    }
-    draw() {
-      if (this.info) g.drawNote(this.info);
-    }
-
-    static parseParams(params) {
-      var ss = params.split(",");
-      if (ss.length < 4) {
-        return null;
-      }
-      var x = parseInt(ss[0]);
-      var y = parseInt(ss[1]);
-      var w = parseInt(ss[2]);
-      if (isNaN(x) || x != ss[0] || isNaN(y) || y != ss[1] || isNaN(w) || w != ss[2]) {
-        return null;
-      }
-      ss.shift();
-      ss.shift();
-      ss.shift();
-      // if there are no more elements in ss, empty string
-      var text = "" + ss.join(",");
-      return {x,y,w,text}
-    }
-  };
-
-
-
-
-  class FoundMessage extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.min = this.objIndex;
-      this.max = this.objIndex;
-      objs[this.objIndex].alive = true;
-    }
-    text() {
-      return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    layout(y) {
-      this.top = mark(this.parent, this, y);
-      objs[this.objIndex].addFoundMessage(this);
-      line(this.text(), this.parent, this.parent, this.top, FOUND);
-      this.bottom = this.top;
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-
-
-
-  class Message extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      objs[this.objIndex].alive = true;
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractReturns();
-      this.extractLater();
-      this.computeMinMax();
-    }
-    check() {
-      // a backwards message with lines crossing under it needs a Pause
-      // inserted before it and a re-layout
-      if (this.parent.objIndex > this.objIndex) {
-        var lines = countLinesUnder.call(this);
-        if (lines.length > 0) {
-          // insert pause before me
-          // find my index
-          var me = 0;
-          while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
-          this.parent.nodes.splice(me, 0, new Pause(this.parent));
-          return false;
-        }
-      }
-      return super.check();
-    }
-    layout(y) {
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      var deferred = [];
-      this.top = mark(this.parent, this, y);
-      line(this.text(), this.parent, this, this.top, CALL);
-      y = this.layoutChildren(this.top + 1, deferred);
-      this.bottom = mark(this, this.parent, y);
-      line((this.returns ? this.returns : ""), this, this.parent, this.bottom, RETURN);
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      layoutLater(this, this.bottom + 1);
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-  ///////////////////////////////////////////
-
-
-  class RefMessage extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.link = null;
-      if (this.params) {
-        let tl = g.textLink(this.params)
-
-        if (tl) {
-          this.params = tl.text
-          this.link = tl.link
-        }
-      }
-      objs[this.objIndex].alive = true;
-      this.min = Math.min(this.objIndex, parent.objIndex);
-      this.max = Math.max(this.objIndex, parent.objIndex);
-    }
-    layout(y) {
-      this.top = markN(objs[this.min], objs[this.max], y, 4);
-      this.bottom = this.top + 3;
-      y = this.bottom + 1;
-
-      const fakeLabel = { top: this.top, bottom: this.bottom, params: "x" };
-      objs[this.min].addLabel(fakeLabel);
-      objs[this.max].addLabel(fakeLabel);
-      line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, this.top, REF, { link : this.link });
-      this.layoutInfo = { name: this.name, params: this.params, link: this.link, top: this.top, bottom: this.bottom, left: this.min, right: this.max, x: this.objIndex };
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-
-  ///////////////////////////////////////////
-  class Pause extends LayoutNode {
-    constructor(parent) {
-      super(parent);
-      this.objIndex = parent.objIndex;
-      this.min = parent.objIndex;
-      this.max = parent.objIndex;
-    }
-    text() {
-      throw new Error("Pause.text should never be called");
-    }
-    layout(y) {
-      this.top = mark(this, this, y);
-      this.bottom = this.top;
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-  class SelfMessage extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      objs[this.objIndex].alive = true;
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractReturns();
-      this.extractLater();
-      this.computeMinMax();
-    }
-    layout(y) {
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      var deferred = [];
-      if (this.islater) {
-        this.top = mark(this.parent, this, y);
-      } else {
-        this.msgTop = mark(this.parent, this, y);
-        this.top = mark(this.parent, this, this.msgTop);
-        line(this.text(), this.parent, this, this.msgTop, CALL); // MIGHT NOT JOIN!!!!!!!
-      }
-
-      objs[this.objIndex].addSelfMessage(this);
-
-      y = this.layoutChildren(this.top + 1, deferred);
-      this.bottom = mark(this, this, y);
-      if (!this.islater) {
-        this.msgBottom = mark(this.parent, this, this.bottom);
-        line((this.returns ? this.returns : ""), this, this.parent, this.msgBottom, RETURN); // MIGHT NOT JOIN!!!!!!!
-      }
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      if (this.islater) y = this.bottom + 1;
-      else y = this.bottom + 3;
-      layoutLater(this, y);
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-
-
-
-
-
-  class Root extends LayoutNode {
-    constructor(call) {
-      super({ objIndex: 0 }, call);
-      this.frames = [];
-      this.inFrame = false;
-      this.labels = [];
-      this.lines = [];
-      objs[this.objIndex].alive = true;
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractReturns();
-      this.extractLater();
-      this.computeMinMax();
-      this.level = 0;
-    }
-    layout(y) {
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      this.top = mark(this.parent, this, y);
-      var deferred = [];
-      y = this.layoutChildren(y, deferred);
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      this.bottom = mark(this.parent, this, y);
-
-      layoutLater(this, this.bottom + 1);
-
-      return y;
-    }
-  };
-
-
-
-
-
-  class LostMessage extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.min = this.objIndex;
-      this.max = this.objIndex;
-      objs[this.objIndex].alive = true;
-    }
-    text() {
-      return this.name.substr(1) + (this.params === null ? "()" : "(" + this.params + ")");
-    }
-    layout(y) {
-      this.top = mark(this.parent, this, y);
-      objs[this.objIndex].addLostMessage(this);
-      line(this.text(), this.parent, this.parent, this.top, LOST);
-      this.bottom = this.top;
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-  class AsynchMessage extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      objs[this.objIndex].alive = true;
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractLater();
-      this.computeMinMax();
-    }
-    check() {
-
-      // forwards
-      if (this.parent.objIndex < this.objIndex) {
-        var lines = countLinesUnder.call(this);
-        if (lines.length > 0) {
-          // insert pause before me
-          // find my index
-          var me = 0;
-          while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
-          this.parent.nodes.splice(me, 0, new Pause(this.parent));
-          return false;
-        }
-        return super.check();
-      } else {
-        var lines = countLinesUnder.call(this);
-        if (lines.length > 0) {
-          for (var i = 0; i < lines.length; i++) {
-            // for each line add a pause at the end of the invocation
-            if (lines[i].from.objIndex == this.objIndex) {
-              // insert pause before me
-              // find my index
-              var me = 0;
-              while (me < this.parent.nodes.length && this.parent.nodes[me] != this) me++;
-              this.parent.nodes.splice(me, 0, new Pause(this.parent));
-              return false;
-            } else {
-              lines[i].from.nodes.push(new Pause(lines[i].from));
-            }
-          }
-          return false;
-        }
-        return super.check();
-      }
-    }
-    layout(y) {
-      this.done = false;
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      if (objs[this.objIndex].pendingAsynch != null) {
-        //objs[this.objIndex].pendingAsynch.deferredLayout();
-        objs[this.objIndex].pendingAsynch = null;
-      }
-      this.top = mark(this.parent, this, y);
-      line(this.text(), this.parent, this, this.top, ASYNCH);
-      this.bottom = this.top + 1; // placeholder
-      if (!DEFER_ASYNC || this.parent.objIndex > this.objIndex) {
-        return this.deferredLayout();
-      } else {
-        objs[this.objIndex].pendingAsynch = this;
-        return this;
-      }
-    }
-    deferredLayout() {
-      if (!this.done) this.done = true;
-      else return;
-      var deferred = [];
-      var y = this.layoutChildren(this.top + 1, deferred);
-      this.bottom = mark(this, this, y);
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      layoutLater(this, this.bottom + 1);
-      return this.top;
-    }
-  };
-
-
-
-
-
-
-  class AsynchSelfMessage extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      objs[this.objIndex].alive = true;
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractLater();
-      this.computeMinMax();
-    }
-    layout(y) {
-      this.done = false;
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      if (objs[this.objIndex].pendingAsynch != null) {
-        //objs[this.objIndex].pendingAsynch.deferredLayout();
-        objs[this.objIndex].pendingAsynch = null;
-      }
-
-      this.msgTop = mark(this.parent, this, y);
-      this.top = mark(this.parent, this, this.msgTop);
-
-      objs[this.objIndex].addSelfMessage(this); ////////////////////// TEST
-
-      line(this.text(), this.parent, this, this.msgTop, ASYNCH);
-      objs[this.objIndex].pendingAsynch = this;
-      return this.deferredLayout();
-    }
-    deferredLayout() {
-      if (!this.done) this.done = true;
-      else return;
-      var deferred = [];
-      var y = this.layoutChildren(this.top + 1, deferred);
-      this.bottom = mark(this.parent, this, y);
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      layoutLater(this, this.bottom + 1);
-      return this.top;
-    }
-  };
-
-
-
-
-
-
-  class Create extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      objs[this.objIndex].alive = true;
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractLater();
-      this.computeMinMax();
-    }
-    text() {
-      return (this.error ? "create" : "<<create>>");
-    }
-    layout(y) {
-      var deferred = [];
-      this.top = mark(this.parent, this, y);
-      this.error = (countInvocationsAt(this.objIndex, this.top) > 0);
-
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      if (!this.error) {
-        if (objs[this.objIndex].cls == "actor"
-          || objs[this.objIndex].cls == "boundary"
-          || objs[this.objIndex].cls == "control"
-          || objs[this.objIndex].cls == "entity") {
-          this.top = mark(this.parent, this, this.top);
-        }
-      }
-      line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
-      y = this.layoutChildren(this.top + 1, deferred);
-      this.bottom = mark(this.parent, this, y);
-      if (!this.error) {
-        objs[this.objIndex].addLifeEvent({ event: OBJ_CREATED, y: this.top });
-      }
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      if (this.error) {
-        line("", this, this.parent, this.bottom, RETURN);
-      }
-      layoutLater(this, this.bottom + 1);
-      return this.bottom;
-    }
-  };
-
-
-
-
-  class Destroy extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      objs[this.objIndex].alive = false;
-      this.nodes = createNodes(this, call.subCalls);
-      this.computeMinMax();
-    }
-    text() {
-      return (this.error ? "destroy" : "<<destroy>>");
-    }
-    layout(y) {
-      var deferred = [];
-      this.top = mark(this.parent, this, y);
-      this.error = (countInvocationsAt(this.objIndex, this.top) > 0);
-      invocations.push(this);
-      objs[this.objIndex].addInvocation(this);
-      line(this.text(), this.parent, this, this.top, (this.error ? CALL : LIFE));
-      y = this.layoutChildren(this.top + 1, deferred);
-      this.bottom = mark(this, this, y);
-      if (!this.error) {
-        this.cross = mark(this, this, this.bottom);
-        objs[this.objIndex].addLifeEvent({ event: OBJ_DESTROYED, y: this.cross });
-      }
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-      if (this.error) {
-        line("", this, this.parent, this.bottom, RETURN);
-      } else {
-        objs[this.objIndex].alive = false;
-      }
-      return (this.error ? this.bottom : this.cross); // y = lo + 1
-    }
-  };
-
-
-
-
-
-  class MultiFrame extends ContainerNode {
-    constructor(parent, parts) {
-      super(parent);
-      this.parent.frames.push(this);
-      this.frames = [];
-      this.inFrame = true;
-      this.labels = [];
-      this.lines = [];
-      this.name = parts[0].name;
-      this.objIndex = parent.objIndex;
-      this.nodes = [];
-      for (var i = 0; i < parts.length; i++) {
-        this.nodes.push(new MultiFramePart(this, parts[i]));
-      }
-      this.computeMinMax();
-      for (var i = 0; i < this.nodes.length; i++) {
-        this.nodes[i].min = this.min;
-        this.nodes[i].max = this.max;
-      }
-      this.level = -1;
-    }
-    text() {
-      throw new Error("MultiFrame.text should never be called");
-    }
-    layout(y) {
-      var deferred = [];
-      this.top = mark(objs[this.min], objs[this.max], y);
-      y = this.top + 1;
-      for (var i = 0; i < this.nodes.length; i++) {
-        y = this.nodes[i].layout(y);
-      }
-      this.bottom = mark(objs[this.min], objs[this.max], y);
-      var splits = [];
-      for (var i = 0; i < this.nodes.length; i++) {
-        splits.push({ text: this.nodes[i].params, top: this.nodes[i].top });
-      }
-
-      objs[this.min].addLeftFrame(this);
-      objs[this.max].addRightFrame(this);
-
-      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max, splits: splits };
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-  class MultiFramePart extends ContainerNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.inheritFrameContext();
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractLater();
-      this.computeMinMax();
-      this.level = -1;
-    }
-    text() {
-      return this.params === null ? "" : "[ " + this.params + " ]";
-    }
-    layout(y) {
-      var lineAt = -1;
-      if (str(this.params)) {
-        this.top = markN(objs[this.min], objs[this.max], y, 2);
-        lineAt = this.top + 1;
-        y = this.top + 2;
-      } else {
-        this.top = mark(objs[this.min], objs[this.max], y);
-        y = this.top + 1;
-      }
-      var deferred = [];
-      y = this.layoutChildren(y, deferred);
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-
-      if (lineAt > 0) {
-        if (this.min == this.max) {
-          objs[this.objIndex].addSelfMessage(this);
-        }
-        line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, lineAt, HIDDEN);
-      }
-
-      //this.bottom = mark(objs[this.min],objs[this.max],this.findMaxY());
-      this.bottom = this.findMaxY();
-
-      layoutLater(this, this.bottom + 1);
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-  class Frame extends ContainerNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.parent.frames.push(this);
-      this.frames = [];
-      this.inFrame = true;
-      this.labels = [];
-      this.lines = [];
-      this.nodes = createNodes(this, call.subCalls);
-      this.extractLater();
-      this.computeMinMax();
-      this.level = -1;
-    }
-    text() {
-      return this.params === null ? "" : "[ " + this.params + " ]";
-    }
-    layout(y) {
-      var deferred = [];
-      var lineAt = -1;
-
-      if (!str(this.params)) {
-        this.top = markN(objs[this.min], objs[this.max], y, 2);
-        y = this.top + 2;
-      } else {
-        this.top = markN(objs[this.min], objs[this.max], y, 3);
-        lineAt = this.top + 2;
-        y = this.top + 3;
-      }
-      y = this.layoutChildren(y, deferred);
-      for (var i = 0; i < deferred.length; i++) {
-        deferred[i].deferredLayout();
-      }
-
-      this.bottom = mark(objs[this.min], objs[this.max], this.findMaxY());
-
-      if (lineAt > 0) {
-        if (this.min == this.max) {
-          objs[this.objIndex].addSelfMessage(this);
-        }
-        line(this.params, { objIndex: this.min, level: 0 }, { objIndex: this.max, level: 0 }, lineAt, HIDDEN);
-      }
-
-      layoutLater(this, this.bottom + 1);
-
-      objs[this.min].addLeftFrame(this);
-      objs[this.max].addRightFrame(this);
-
-      this.layoutInfo = { name: this.name, params: this.params, top: this.top, bottom: this.bottom, left: this.min, right: this.max };
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-
-
-  class RefLabel extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.parent.labels.push(this);
-      this.link = null;
-      if (this.params) {
-        let tl = g.textLink(this.params)
-
-        if (tl) {
-          this.params = tl.text
-          this.link = tl.link
-        }
-      }
-
-      this.min = this.objIndex;
-      this.max = this.objIndex;
-      this.level = -1;
-    }
-    text() {
-      return this.params === null ? "" : "[ " + this.params + " ]";
-    }
-    layout(y) {
-
-      this.top = markN(objs[this.objIndex], objs[this.objIndex], y, 4);
-      this.bottom = this.top + 3;
-      y = this.bottom + 1;
-      objs[this.min].addLabel(this);
-      this.layoutInfo = { name: this.name, params: this.params, link: this.link, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-
-  class Label extends LayoutNode {
-    constructor(parent, call) {
-      super(parent, call);
-      this.parent.labels.push(this);
-      objs[this.objIndex].alive = true;
-      this.nodes = [];
-      this.computeMinMax();
-      this.level = parent.level;
-    }
-    text() {
-      return this.name + (this.params === null ? "" : "( " + this.params + " )");
-    }
-    layout(y) {
-      var left = { objIndex: this.objIndex };
-      //		if (this.objIndex>0) left.objIndex--;
-      var right = { objIndex: this.objIndex };
-      //		if (objs.length>this.objIndex+1) right.objIndex++;
-      this.top = mark(left, right, y);
-        /*if (this.name=="ref") y = mark(left,right,this.top);
-        else */ y = this.top;
-      this.bottom = mark(left, right, y);
-      this.layoutInfo = { name: this.name, text: this.params, top: this.top, bottom: this.bottom, left: this.objIndex, right: this.objIndex, x: this.objIndex };
-
-      objs[this.objIndex].addLabel(this);
-
-      return this.bottom;
-    }
-  };
-
-
-
-
-
-  function createNodes(parent, subCalls) {
-    var nodes = [];
-    for (var i = 0; i < subCalls.length; i++) {
-
-      var name = subCalls[i].name.toLowerCase();
-      var noChildren = subCalls[i].subCalls.length == 0;
-
-      if (parent.objIndex == subCalls[i].objIndex) {
-
-        if (noChildren && name == "pause") {
-          nodes.push(new Pause(parent));
-        } else if (noChildren && name == "note" && Note.parseParams(subCalls[i].params)) {
-          notes.push(new Note(subCalls[i]));
-        } else if (noChildren && name.charAt(0) == "-") {
-          nodes.push(new LostMessage(parent, subCalls[i]));
-        } else if (noChildren && name.charAt(0) == "+") {
-          nodes.push(new FoundMessage(parent, subCalls[i]));
-        } else if (noChildren && (name == "state" || name == "invariant") && subCalls[i].params !== null) {
-          nodes.push(new Label(parent, subCalls[i]));
-        } else if (noChildren && name == "ref" && subCalls[i].params !== null) {
-
-          nodes.push(new RefLabel(parent, subCalls[i]));
-
-        } else if (!noChildren && (name == "alt" || name == "par" || name == "strict" || name == "seq")) {
-          var calls = [];
-          for (; i < subCalls.length && subCalls[i].name == name; i++) {
-            calls.push(subCalls[i]);
-          }
-          i--;
-          nodes.push(new MultiFrame(parent, calls));
-
-        } else if (!noChildren && (name == "loop" || name == "opt"
-          || name == "critical" || name == "ignore" || name == "consider"
-          || name == "assert" || name == "neg" || name == "break")) {
-
-          nodes.push(new Frame(parent, subCalls[i]));
-
-        } else if (subCalls[i].isAsynch) {
-          nodes.push(new AsynchSelfMessage(parent, subCalls[i]));
-        } else {
-          nodes.push(new SelfMessage(parent, subCalls[i]));
-        }
-      } else {
-
-        if (subCalls[i].isAsynch) {
-          if (objs[subCalls[i].objIndex].alive === false) {
-            nodes.push(new Create(parent, { objIndex: subCalls[i].objIndex, name: "create", params: null, isAsynch: false, subCalls: [] }));
-          }
-          nodes.push(new AsynchMessage(parent, subCalls[i]));
-        } else if (subCalls[i].name.toLowerCase() == "create") {
-          if (objs[subCalls[i].objIndex].alive === true) {
-            nodes.push(new Destroy(parent, { objIndex: subCalls[i].objIndex, name: "destroy", params: null, isAsynch: false, subCalls: [] }));
-          }
-          nodes.push(new Create(parent, subCalls[i]));
-        } else if (subCalls[i].name.toLowerCase() == "destroy") {
-          if (objs[subCalls[i].objIndex].alive === false) {
-            nodes.push(new Create(parent, { objIndex: subCalls[i].objIndex, name: "create", params: null, isAsynch: false, subCalls: [] }));
-          }
-          nodes.push(new Destroy(parent, subCalls[i]));
-        } else if (name == "ref" && noChildren && subCalls[i].params !== null) {
-          nodes.push(new RefMessage(parent, subCalls[i]));
-        } else {
-          if (objs[subCalls[i].objIndex].alive === false) {
-            nodes.push(new Create(parent, { objIndex: subCalls[i].objIndex, name: "create", params: null, isAsynch: false, subCalls: [] }));
-          }
-          nodes.push(new Message(parent, subCalls[i]));
-        }
-      }
-    }
-    return nodes;
-  }
-
-   function drawYs() {
-     for (let i = 0; i <= maxY; i++) {
-       g.text(i, 3, y(i),ALIGN_LEFT)
-     }
-     for (let i = 0; i < objs.length; i++) {
+    for (let i = 0; i < objs.length; i++) {
       g.text(i, objs[i].x, 20, ALIGN_LEFT)
       for (let j=0 ; j < objs[i].marks.length; j++) {
         if (objs[i].marks[j]) g.text("X", objs[i].x, y(j), ALIGN_LEFT)
       }
 
-      console.log(i + " " + objs[i].name + " " + objs[i].bottom + " " + objs[i].getLeftWidth(g) + " " + objs[i].getRightWidth(g))  
-     }
-   }
-
-  var diagramFrame = null;
-  var sized = false;
+      console.log(i + " " + objs[i].name + " " + objs[i].bottom + " " + objs[i].getLeftWidth(g) + " " + objs[i].getRightWidth(g))
+    }
+  }
 
   init();
   try {
@@ -1688,19 +593,16 @@ export function graph(_objs, rootCall, g) {
       rootCall.subCalls = rootCall.subCalls[0].subCalls;
     }
 
-    root = new Root(rootCall);
-    //var n = new FoundMessage({objIndex:0},rootCall);
+    root = new N.Root(rootCall);
     for (var i = 0; ; i++) {
       root.layout(1);
       sortInvocations();
       calcInvocationLevels();
       if (root.check() || i == 5) break;
       reset();
-
     }
 
     // work out sizes
-    //objs.push();
     const dim = layout();
     const diagramWidth = Math.ceil(dim.w)
 
@@ -1711,7 +613,7 @@ export function graph(_objs, rootCall, g) {
     dim.w = Math.ceil(dim.w)
     dim.h = Math.ceil(dim.h)
 
-    g.setSize(dim.w, dim.h); // Math.max(maxNoteY,y(maxY+2)));
+    g.setSize(dim.w, dim.h);
     sized = true;
     const svgWidth = dim.w
 
@@ -1719,7 +621,7 @@ export function graph(_objs, rootCall, g) {
       // translate graphics to center
       g.setTranslation((svgWidth-diagramWidth)/2,0)
     }
-    
+
     draw();
 
     if (DEBUG) drawYs()
