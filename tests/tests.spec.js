@@ -37,14 +37,9 @@ function normalizeIds(svg) {
 // (line is null when the error has no token, e.g. at EOF).
 // Inputs not listed here must produce no errors at all.
 const EXPECTED_ERRORS = {
-  'later': [{ id: 9, line: 5 }, { id: 9, line: 13 }],
-  'no-call': [{ id: 6, line: null }, { id: 8, line: null }],
+  'no-call': [{ id: 6, line: null }],
   'no-classifier': [{ id: 4, line: null }],
   'open-body': [{ id: 13, line: null }],
-  'simple-example': [{ id: 9, line: 2 }],
-  'simplest': [{ id: 9, line: 1 }, { id: 9, line: 3 }],
-  'single-ident': [{ id: 8, line: null }],
-  'from-string-test1': [{ id: 8, line: null }],
 }
 
 function check(name, source) {

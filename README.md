@@ -8,16 +8,18 @@ This is a tool designed for programmers that want to capture the logic rather th
 
 The following shows an example script and the resulting SVG diagram:
 
-<pre><code>a.get() {
+<pre><code>a.get(params) {
     b > msg {
-        db.store()
+        db.store
     }
 }
-c.destroy()
+c.destroy
 
 note( 60, 300, 280, seqcode - UML sequence diagrams automatically translated from simple code.)</code></pre>
 
-![Example seqcode diagram](/tests/output/simple-example.svg "Example seqcode diagram")
+Parentheses on calls and signals are optional when there are no parameters to show.
+
+![Example seqcode diagram](/tests/output/optional-parens.svg "Example seqcode diagram")
 
 For a live demonstration visit: https://seqcode.app
 

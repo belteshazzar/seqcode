@@ -121,11 +121,8 @@ export function parse(tokens) {
             name = pop().str;
           }
 
-          if (peek() == null) {
-            errors.push(new ParseError(null, "Expected parameters but found eof", 8));
-          } else if (peek().type != PARAMS) {
-            errors.push(new ParseError(peek(), "Expected parameters, but found: " + peek().str, 9));
-          } else {
+          // parentheses are optional: consume params when present
+          if (peek() != null && peek().type == PARAMS) {
             params = pop().str;
           }
 
@@ -176,11 +173,8 @@ export function parse(tokens) {
 
           let msg = ident.str;
           var params = "";
-          if (tok == null) {
-            errors.push(new ParseError(null, "Expected parameters but found eof", 8));
-          } else if (tok.type != PARAMS) {
-            errors.push(new ParseError(tok, "Expected parameters, but found: " + tok.str, 9));
-          } else {
+          // parentheses are optional: consume params when present
+          if (tok != null && tok.type == PARAMS) {
             params = tok.str;
             tok = pop(); // remove params
           }
