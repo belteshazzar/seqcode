@@ -40,6 +40,17 @@ const str = svg.svg()    // string of svg source
 const element = svg.node // HTML Element
 ```
 
+### Command Line
+
+The package installs a `seqcode` command that renders scripts to SVG files of the same name (requires the optional `svgdom` dependency):
+
+```
+npm install seqcode svgdom
+npx seqcode diagram.seqcode     # writes diagram.svg
+```
+
+Parse and layout errors are reported on stderr with line and column numbers; the SVG is still written since SeqCode recovers from script errors.
+
 ### Node Dependencies
 
 In a nodejs environment you need to create the dependencies for SVG creation (the tests do this):

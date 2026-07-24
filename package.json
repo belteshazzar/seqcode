@@ -4,7 +4,11 @@
   "license": "BSD-2-Clause",
   "type": "module",
   "types": "./seqcode.d.ts",
+  "bin": {
+    "seqcode": "bin/seqcode.js"
+  },
   "files": [
+    "bin",
     "dist",
     "seqcode.d.ts"
   ],

@@ -3,7 +3,7 @@ import js from '@eslint/js';
 
 export default [
   {
-    files: ['src/**/*.js', 'tests/**/*.js'],
+    files: ['src/**/*.js', 'tests/**/*.js', 'bin/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
