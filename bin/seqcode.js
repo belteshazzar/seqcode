@@ -12,12 +12,12 @@ function usage() {
 }
 
 async function loadSeqcode() {
-  // Published package ships dist/ only; the repo may be unbuilt, so fall
-  // back to the source entry point.
+  // In the repo, prefer the source entry point so the CLI never runs a
+  // stale build; the published package ships dist/ only, so fall back.
   try {
-    return (await import('../dist/seqcode.js')).default;
-  } catch {
     return (await import('../src/main.js')).default;
+  } catch {
+    return (await import('../dist/seqcode.js')).default;
   }
 }
 
