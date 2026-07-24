@@ -1,9 +1,13 @@
 {
   "name": "seqcode",
-  "version": "0.1.23",
+  "version": "0.2.0",
   "license": "BSD-2-Clause",
   "type": "module",
   "types": "./seqcode.d.ts",
+  "files": [
+    "dist",
+    "seqcode.d.ts"
+  ],
   "exports": {
     ".": {
       "types": "./seqcode.d.ts",
